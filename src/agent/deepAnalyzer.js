@@ -777,9 +777,12 @@ function generateRecommendation(edge, modelProb, market, allFactors) {
 /**
  * Generate detailed reasoning for the recommendation
  */
+/**
+ * Generate detailed reasoning for the recommendation
+ */
 function generateDetailedReasoning(side, factors, edge) {
     const reasons = [];
-    const teamName = side === 'home' ? factors.teamStrength.home.record?.split('-')[0] : factors.teamStrength.away.record?.split('-')[0]; // simple hack if name not passed, but we can improve
+    const teamName = side === 'home' ? factors.teamStrength.home.record?.split('-')?.[0] || 'Home Team' : factors.teamStrength.away.record?.split('-')?.[0] || 'Away Team';
 
     // Team Strength
     if (factors.teamStrength.advantage === side) {
@@ -800,72 +803,69 @@ function generateDetailedReasoning(side, factors, edge) {
             importance: 80,
             icon: '🔥',
             title: 'Hot Streak',
-            description: `Playing their best basketball recently (${form.last5Record} in last 5).`
+            description: `Riding a ${form.streak} streak and outscoring opponents by ${form.pointDiffL5} over last 5.`
         });
     }
 
-    // Injuries
-    if (factors.injuries.advantage === side) {
-        reasons.push({
-            factor: 'Health',
-            importance: Math.abs(factors.injuries.differential) * 2,
-            icon: '🏥',
-            title: 'Health Advantage',
-            description: `Opponent is dealing with impact injuries to key rotation players.`
-        });
-    }
-
-    // Situational
-    if (factors.situational.advantage === side && Math.abs(factors.situational.totalAdvantagePoints) > 1) {
-        reasons.push({
-            factor: 'Situational',
-            importance: Math.abs(factors.situational.totalAdvantagePoints) * 10,
-            icon: '🗓️',
-            title: 'Rest & Schedule',
-            description: `Favorable spot with ${factors.situational[side].restDays} days rest vs opponent.`
-        });
-    }
-
-    // Matchups
-    if (factors.matchups.overallAdvantage.toLowerCase().includes(side)) {
+    // Matchup Advantage
+    if (factors.matchups.overallAdvantage === side) {
         reasons.push({
             factor: 'Matchups',
-            importance: 60,
-            icon: '⚔️',
-            title: 'Positional Mismatch',
-            description: `Strong advantage in starter matchups, particularly in the frontcourt.`
-        });
-    }
-
-    // Market / Sharp Money (from Advanced)
-    const lineMove = factors.advanced?.factors?.find(f => f.factor === 'Line Movement');
-    if (lineMove?.advantage === side) {
-        reasons.push({
-            factor: 'Sharp Money',
             importance: 75,
-            icon: '💰',
-            title: 'Sharp Action',
-            description: `Smart money is backing this side, pushing the line despite public sentiment.`
+            icon: '⚔️',
+            title: 'Positional Mismatches',
+            description: `Key advantages at ${factors.matchups.dominantMatchups.map(m => m.position).join(', ')} positions.`
         });
     }
 
-    // Sort by importance and take top 3
-    const topReasons = reasons.sort((a, b) => b.importance - a.importance).slice(0, 3);
+    // Advanced Factors (Top 3)
+    const buildingReasons = [];
 
-    // Fallback if no strong reasons found (rare if edge exists)
-    if (topReasons.length === 0) {
-        topReasons.push({
-            icon: '📈',
-            title: 'Model Projection',
-            description: `Overall statistical profile favors ${side} by a ${edge}% margin.`
-        });
+    if (factors.advanced?.factors) {
+        factors.advanced.factors
+            .filter(f => f.advantage === side || (side === 'home' && f.advantage === 'over') || (side === 'away' && f.advantage === 'under')) // rough logic for totals
+            .sort((a, b) => b.impact - a.impact)
+            .slice(0, 3)
+            .forEach(f => {
+                reasons.push({
+                    factor: f.factor,
+                    importance: f.impact * 10,
+                    icon: f.icon,
+                    title: f.factor,
+                    description: f.insight
+                });
+                buildingReasons.push(f.insight);
+            });
+    }
+
+    // Sort by importance
+    reasons.sort((a, b) => b.importance - a.importance);
+
+    // Generate Narrative Paragraph
+    const topFactor = reasons[0];
+    const secondaryFactor = reasons[1];
+    const tertiaryFactor = reasons[2];
+
+    let narrative = `We recommend backing the ${side.toUpperCase()} team based on `;
+
+    if (topFactor) {
+        narrative += `${topFactor.title.toLowerCase()} (${topFactor.description}). `;
+    }
+
+    if (secondaryFactor) {
+        narrative += `Additionally, ${secondaryFactor.description.toLowerCase()} `;
+    }
+
+    if (tertiaryFactor) {
+        narrative += `Finally, ${tertiaryFactor.description.toLowerCase()}`;
     }
 
     return {
-        summary: `We recommend backing the ${side.toUpperCase()} team based on ${topReasons.length} key advantages.`,
-        keyFactors: topReasons
+        summary: narrative,
+        keyFactors: reasons
     };
 }
+
 
 /**
  * Calculate confidence level
