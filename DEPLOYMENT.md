@@ -15,40 +15,25 @@ npm run dev:full
 - Frontend: `http://localhost:5174`
 - Backend: `http://localhost:3001`
 
-## Deployment Strategy
+## Final Step: Deploy to Vercel
 
-Since this app requires a backend to scrape data and proxy requests (avoiding CORS), you need to deploy both parts.
+Your backend is already live at: `https://sports-betting-analyzer-yec3.onrender.com`
 
-### Option 1: Separate Hosting (Recommended)
+1. Go to **[Vercel.com](https://vercel.com/)** and sign up/login.
+2. Click **"Add New..."** -> **"Project"**.
+3. Import your `sports-betting-analyzer` repository.
+4. **Environment Variables**:
+   - I have included a `.env.production` file which automatically sets the API URL.
+   - You can just click **"Deploy"**.
+   
+   *(If deployment fails or data doesn't load, add this manually in Vercel settings:)*
+   - Key: `VITE_API_URL`
+   - Value: `https://sports-betting-analyzer-yec3.onrender.com`
 
-1. **Deploy Backend (Server)**
-   - Use a service like **Render**, **Railway**, or **Heroku**.
-   - Root directory: `./server` (or set Build Command to `cd server && npm install` and Start Command to `node index.js`).
-   - Note the URL (e.g., `https://my-betting-api.onrender.com`).
+5. Once deployed, Vercel will give you a live URL (e.g., `https://sports-betting-analyzer.vercel.app`).
+   - Open it and go to the **"Backtest Model"** tab to verify!
 
-2. **Deploy Frontend (Client)**
-   - Use **Vercel** or **Netlify**.
-   - Root directory: `./` (project root).
-   - Build Command: `npm run build`
-   - Output Directory: `dist`
-   - **Environment Variables**:
-     - Add `VITE_API_URL` and set it to your Backend URL (e.g., `https://my-betting-api.onrender.com`).
+## Troubleshooting
 
-### Option 2: Unified Deployment (Advanced)
-
-You can serve the React build artifacts from the Express server.
-1. Run `npm run build` in root.
-2. Copy `dist` folder to `server/public`.
-3. In `server/index.js`, add:
-   ```javascript
-   app.use(express.static('public'));
-   app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-   ```
-4. Deploy the whole repo to Render/Heroku.
-
-## Environment Variables
-
-| Variable | Description |
-|----------|-------------|
-| `PORT` | Backend port (default 3001) |
-| `ODDS_API_KEY` | Optional: API Key for The Odds API if you want real sportsbook odds |
+- If the app says "Offline / Server Error", the Render backend might be sleeping (it spins down on free tier).
+- Just refresh the page after 30-60 seconds and it will wake up.
