@@ -54,59 +54,25 @@ class SportsDataStore {
 export const dataStore = new SportsDataStore();
 
 /**
- * AGENT: Fetch live odds from The Odds API
+ * AGENT: Fetch live odds
+ * DEPRECATED: Odds are now scraped from ESPN and other public sources
+ * See server/agent/oddsScraper.js for the scraping implementation
+ * NO API KEY REQUIRED
  */
-export async function fetchLiveOdds(sport = 'basketball_nba', apiKey) {
-    console.log(`[AGENT] Fetching live odds for ${sport}...`);
+export async function fetchLiveOdds(sport = 'basketball_nba', apiKey = null) {
+    console.log(`[AGENT] Odds are now scraped from public sources (no API key needed)`);
+    console.log(`[AGENT] Use the /api/data endpoint which includes scraped odds`);
 
-    try {
-        const url = `${DATA_SOURCES.ODDS_API}/${sport}/odds?apiKey=${apiKey}&regions=us&markets=h2h,spreads,totals&oddsFormat=american`;
-        const response = await fetch(url);
+    // This function is kept for backward compatibility
+    // Actual odds scraping happens in server/agent/oddsScraper.js
+    // The frontend gets odds from the /api/data endpoint
 
-        if (!response.ok) {
-            throw new Error(`Odds API error: ${response.status}`);
-        }
+    dataStore.lastUpdated.odds = new Date().toISOString();
+    console.log(`[AGENT] ⚠ fetchLiveOdds is deprecated - odds are scraped server-side`);
 
-        const data = await response.json();
-
-        // Process and store odds
-        data.forEach(game => {
-            const gameOdds = {
-                id: game.id,
-                sport: game.sport_key,
-                homeTeam: game.home_team,
-                awayTeam: game.away_team,
-                startTime: game.commence_time,
-                bookmakers: {}
-            };
-
-            game.bookmakers?.forEach(book => {
-                gameOdds.bookmakers[book.key] = {
-                    name: book.title,
-                    markets: {}
-                };
-
-                book.markets?.forEach(market => {
-                    gameOdds.bookmakers[book.key].markets[market.key] = market.outcomes.map(o => ({
-                        name: o.name,
-                        price: o.price,
-                        point: o.point
-                    }));
-                });
-            });
-
-            dataStore.odds.set(game.id, gameOdds);
-        });
-
-        dataStore.lastUpdated.odds = new Date().toISOString();
-        console.log(`[AGENT] ✓ Fetched odds for ${data.length} games`);
-
-        return data;
-    } catch (error) {
-        console.error('[AGENT] Odds fetch error:', error.message);
-        return null;
-    }
+    return null; // Odds come from server scraping
 }
+
 
 /**
  * AGENT: Fetch today's games and scores from ESPN

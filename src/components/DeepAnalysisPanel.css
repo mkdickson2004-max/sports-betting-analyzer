@@ -1684,3 +1684,389 @@
     /* Icon width + gap */
     line-height: 1.5;
 }
+
+/* ============================================ */
+/* AI INSIGHTS SECTION - Gemini LLM Powered    */
+/* ============================================ */
+
+.ai-insights-section {
+    padding: var(--space-lg);
+}
+
+.ai-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: linear-gradient(135deg, rgba(66, 133, 244, 0.15), rgba(156, 39, 176, 0.15));
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+    border: 1px solid rgba(66, 133, 244, 0.3);
+}
+
+.ai-badge .ai-icon {
+    font-size: 1.3rem;
+}
+
+.ai-badge .ai-label {
+    font-weight: 700;
+    color: #4285f4;
+    font-size: 0.9rem;
+}
+
+.ai-badge .ai-model {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.ai-narrative {
+    background: var(--surface-elevated);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+    border-left: 4px solid #4285f4;
+}
+
+.ai-narrative h4 {
+    margin: 0 0 var(--space-md) 0;
+    color: var(--text-primary);
+}
+
+.ai-narrative .narrative-text {
+    margin: 0;
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+    white-space: pre-line;
+}
+
+.ai-key-insight {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-lg);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.ai-key-insight .insight-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.ai-key-insight p {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #f59e0b;
+    line-height: 1.5;
+}
+
+.ai-sharp-angle {
+    background: var(--surface-elevated);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+    border-left: 4px solid var(--accent-green);
+}
+
+.ai-sharp-angle h4 {
+    margin: 0 0 var(--space-sm) 0;
+    color: var(--accent-green);
+}
+
+.ai-sharp-angle p {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+.ai-rec-bet {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.ai-rec-bet h4 {
+    margin: 0 0 var(--space-md) 0;
+    color: var(--accent-green);
+}
+
+.ai-bet-details {
+    display: flex;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+}
+
+.ai-bet-details .bet-type,
+.ai-bet-details .bet-side {
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.ai-bet-details .bet-type {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+}
+
+.ai-bet-details .bet-side {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+.ai-rec-bet .bet-reasoning {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* Sentiment Analysis */
+.ai-sentiment {
+    background: var(--surface-elevated);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+}
+
+.ai-sentiment h4 {
+    margin: 0 0 var(--space-lg) 0;
+    color: var(--text-primary);
+}
+
+.sentiment-scores {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+}
+
+.sentiment-team {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.sentiment-team .team-name {
+    width: 140px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.sentiment-bar {
+    flex: 1;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.sentiment-bar .bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+
+.sentiment-bar.positive .bar-fill {
+    background: linear-gradient(90deg, #10b981, #34d399);
+}
+
+.sentiment-bar.negative .bar-fill {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.sentiment-bar.neutral .bar-fill {
+    background: linear-gradient(90deg, #64748b, #94a3b8);
+}
+
+.sentiment-team .score {
+    width: 30px;
+    text-align: right;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.sentiment-impact {
+    margin: var(--space-md) 0 0 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.contrarian-alert {
+    margin-top: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    background: rgba(245, 158, 11, 0.1);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    color: #f59e0b;
+    border-left: 3px solid #f59e0b;
+}
+
+.contrarian-alert span {
+    font-weight: 700;
+}
+
+/* Situational Edges */
+.ai-situations {
+    margin-bottom: var(--space-lg);
+}
+
+.ai-situations h4 {
+    margin: 0 0 var(--space-md) 0;
+    color: var(--text-primary);
+}
+
+.situations-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.situation-card {
+    background: var(--surface-elevated);
+    border-radius: var(--radius-md);
+    padding: var(--space-md) var(--space-lg);
+    border-left: 4px solid #64748b;
+}
+
+.situation-card.home {
+    border-left-color: #3b82f6;
+}
+
+.situation-card.away {
+    border-left-color: #8b5cf6;
+}
+
+.sit-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-sm);
+}
+
+.sit-name {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.sit-edge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(100, 116, 139, 0.2);
+    color: #94a3b8;
+}
+
+.sit-edge.home {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+}
+
+.sit-edge.away {
+    background: rgba(139, 92, 246, 0.2);
+    color: #a78bfa;
+}
+
+.sit-strength {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-left: auto;
+}
+
+.sit-explain {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.hidden-edge,
+.market-blindspot {
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-sm);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.hidden-edge {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+    color: var(--text-primary);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.market-blindspot {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(245, 158, 11, 0.05));
+    color: var(--text-primary);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.hidden-edge strong,
+.market-blindspot strong {
+    white-space: nowrap;
+}
+
+.edge-icon {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+/* AI Risks */
+.ai-risks {
+    background: rgba(239, 68, 68, 0.05);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+}
+
+.ai-risks h4 {
+    margin: 0 0 var(--space-md) 0;
+    color: var(--text-primary);
+}
+
+.ai-risks ul {
+    margin: 0;
+    padding-left: var(--space-lg);
+    list-style: disc;
+}
+
+.ai-risks li {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: var(--space-xs);
+}
+
+/* AI Confidence */
+.ai-confidence {
+    text-align: center;
+    padding: var(--space-md);
+    background: var(--surface-elevated);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.ai-confidence strong {
+    color: #4285f4;
+    font-size: 1.1rem;
+}

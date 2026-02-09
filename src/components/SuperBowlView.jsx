@@ -11,10 +11,16 @@ export default function SuperBowlView() {
     const [targetGame, setTargetGame] = useState(null);
     const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
-    // Ensure we are looking at NFL data
+    // Ensure we are lookijng at NFL data and auto-refresh
     useEffect(() => {
         setSport('nfl');
         refreshData();
+
+        // Auto-refresh every 60 seconds
+        const interval = setInterval(() => {
+            refreshData();
+        }, 60000);
+        return () => clearInterval(interval);
     }, [setSport, refreshData]);
 
     // Find the Super Bowl game and generate analysis
@@ -22,7 +28,7 @@ export default function SuperBowlView() {
         const findAndAnalyzeGame = async () => {
             if (!data.games || data.games.length === 0) return;
 
-            // Look for Super Bowl or take the first available NFL game (likely the only one in playoffs/SB week)
+            // Look for Super Bowl or take the first available NFL game
             const sbGame = data.games.find(g =>
                 g.name?.toLowerCase().includes('super bowl') ||
                 g.status?.toLowerCase().includes('scheduled') ||
@@ -31,7 +37,11 @@ export default function SuperBowlView() {
 
             if (sbGame) {
                 setTargetGame(sbGame);
-                setLoadingAnalysis(true);
+
+                // Only show loading if we haven't analyzed yet
+                if (!analysis) {
+                    setLoadingAnalysis(true);
+                }
 
                 // Find matching odds
                 const gameOdds = data.odds?.find(o =>
@@ -46,7 +56,8 @@ export default function SuperBowlView() {
                         gameOdds || { bookmakers: [] },
                         data.injuries,
                         data.news,
-                        data.stats
+                        data.stats,
+                        sbGame.scrapedData // Pass scraped data
                     );
                     setAnalysis(analysisResult);
                 } catch (err) {
@@ -67,7 +78,11 @@ export default function SuperBowlView() {
             <div className="super-bowl-view loading">
                 <div className="loading-spinner">🏈</div>
                 <h2>Scraping Real-Time NFL Data...</h2>
-                <p>Connecting to Sportsbooks & Stats APIs...</p>
+                <div className="loading-steps">
+                    <p>⚡ Connecting to Sportsbooks...</p>
+                    <p>🌐 Searching Web for Injury News...</p>
+                    <p>📊 Aggregating Advanced Stats...</p>
+                </div>
             </div>
         );
     }
@@ -82,15 +97,10 @@ export default function SuperBowlView() {
                     </div>
                 </div>
                 <div className="no-data-message">
-                    <h3>No Live Game Data Found</h3>
-                    <p>Unable to retrieve real-time data for the Super Bowl.</p>
-                    <p>This may be due to the off-season or API connectivity issues.</p>
-                    <button onClick={() => refreshData()} className="refresh-btn">
-                        Retry Connection
-                    </button>
-                    <div className="debug-info">
-                        <small>Source: ESPN API (NFL)</small>
-                    </div>
+                    <div className="pulse-loader"></div>
+                    <h3>Scanning for Game Data...</h3>
+                    <p>AI Agent is searching for live Super Bowl data.</p>
+                    <p>System is continuously scraping reliable sources.</p>
                 </div>
             </div>
         );
@@ -156,20 +166,28 @@ export default function SuperBowlView() {
 
             <div className="sb-analysis-container">
                 <div className="analysis-header">
-                    <h3>🤖 EdgeFinder AI Analysis</h3>
-                    <p>Real-Time Betting Intelligence • Powered by Live Data</p>
+                    <h3>🤖 EdgeFinder AI V3.0</h3>
+                    <div className="status-badge">
+                        <span className="analysis-pulse">●</span> ALWAYS ANALYZING
+                    </div>
+                    <p>Continuous Web Scraping • Real-Time Factor Updates • Live Confidence Score</p>
                 </div>
 
                 {loadingAnalysis ? (
-                    <div className="analyzing-loader">Generating deep analysis...</div>
+                    <div className="analyzing-loader">
+                        <div className="spinner"></div>
+                        <span>Scraping web for latest data & simulating outcomes...</span>
+                    </div>
                 ) : analysis ? (
                     <DeepAnalysisPanel
                         game={targetGame}
                         odds={data.odds?.find(o => o.home_team === targetGame.homeTeam.name) || {}}
                         analysisData={analysis}
+                        scrapedData={targetGame.scrapedData}
+                        aiAnalysis={targetGame.aiAnalysis}
                     />
                 ) : (
-                    <div className="analysis-error">Analysis extraction failed.</div>
+                    <div className="analysis-error">Analysis extraction failed. Only live data accepted.</div>
                 )}
             </div>
         </div>

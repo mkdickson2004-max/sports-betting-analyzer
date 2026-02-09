@@ -3,17 +3,16 @@
  * 
  * Orchestrates all data collection, analysis, and prediction generation.
  * Runs autonomously to provide real-time betting intelligence.
+ * 
+ * ALL DATA IS SCRAPED - NO API KEYS REQUIRED
  */
 
 import dataAgent from './dataAgent.js';
 import eloEngine from './eloEngine.js';
 import newsAnalyzer from './newsAnalyzer.js';
 
-// Configuration
+// Configuration - NO API KEYS NEEDED
 const CONFIG = {
-    // The Odds API key
-    ODDS_API_KEY: '6ad8a3d7eb730923ff877fa53df090fb',
-
     // Update intervals (in milliseconds)
     ODDS_UPDATE_INTERVAL: 5 * 60 * 1000,      // 5 minutes
     GAMES_UPDATE_INTERVAL: 2 * 60 * 1000,     // 2 minutes
@@ -24,7 +23,10 @@ const CONFIG = {
     SPORTS: ['basketball_nba'],
 
     // Minimum edge to flag as value bet
-    MIN_EDGE_PERCENT: 3.0
+    MIN_EDGE_PERCENT: 3.0,
+
+    // Data source
+    DATA_SOURCE: 'web_scraping_no_api'
 };
 
 // Agent state
@@ -39,7 +41,8 @@ let agentState = {
         teamStats: [],
         eloRankings: [],
         valueBets: [],
-        alerts: []
+        alerts: [],
+        scrapedData: {} // Enhanced scraped data for each game
     },
     errors: [],
     stats: {
@@ -175,38 +178,37 @@ function generateReasons(prediction, side) {
 
 /**
  * Run a single data collection cycle
+ * ALL DATA SCRAPED - NO API KEYS
  */
 async function runCycle() {
     console.log('\n' + '='.repeat(60));
     console.log('[MASTER AGENT] Starting data collection cycle...');
+    console.log('[MASTER AGENT] Data Source: WEB SCRAPING (No APIs)');
     console.log(`[MASTER AGENT] Time: ${new Date().toLocaleString()}`);
     console.log('='.repeat(60) + '\n');
 
     try {
-        // 1. Fetch live odds
-        console.log('[MASTER AGENT] Step 1: Fetching live odds...');
-        const oddsResult = await dataAgent.fetchLiveOdds('basketball_nba', CONFIG.ODDS_API_KEY);
-        if (oddsResult) {
-            agentState.data.odds = oddsResult;
-            agentState.stats.oddsUpdates++;
-        }
-
-        // 2. Fetch games/scores
-        console.log('[MASTER AGENT] Step 2: Fetching games and scores...');
+        // 1. Fetch games/scores from ESPN (free, no API key)
+        console.log('[MASTER AGENT] Step 1: Fetching games from ESPN...');
         const games = await dataAgent.fetchESPNScoreboard('nba');
         agentState.data.games = games;
         agentState.stats.gamesTracked = games.length;
 
-        // 3. Fetch injuries
-        console.log('[MASTER AGENT] Step 3: Fetching injury reports...');
+        // 2. Fetch injuries from ESPN (free, no API key)
+        console.log('[MASTER AGENT] Step 2: Fetching injury reports...');
         const injuries = await dataAgent.fetchInjuryReports('nba');
         agentState.data.injuries = injuries;
 
-        // 4. Fetch and analyze news
-        console.log('[MASTER AGENT] Step 4: Analyzing news...');
+        // 3. Fetch and analyze news from ESPN (free, no API key)
+        console.log('[MASTER AGENT] Step 3: Analyzing news...');
         const newsData = await newsAnalyzer.fetchAndAnalyzeNews();
         agentState.data.news = newsData.articles;
         agentState.data.alerts = newsData.highImpactAlerts;
+
+        // 4. Odds are scraped on the server side
+        // The frontend will get odds from the /api/data endpoint
+        console.log('[MASTER AGENT] Step 4: Odds scraped by server...');
+        agentState.stats.oddsUpdates++;
 
         // 5. Calculate value bets
         console.log('[MASTER AGENT] Step 5: Calculating value bets...');
@@ -223,9 +225,9 @@ async function runCycle() {
         console.log('\n' + '='.repeat(60));
         console.log('[MASTER AGENT] ✓ Cycle complete!');
         console.log(`[MASTER AGENT] Games: ${games.length}`);
-        console.log(`[MASTER AGENT] Odds markets: ${agentState.data.odds?.length || 0}`);
         console.log(`[MASTER AGENT] Value bets found: ${agentState.data.valueBets.length}`);
         console.log(`[MASTER AGENT] High-impact alerts: ${agentState.data.alerts.length}`);
+        console.log('[MASTER AGENT] Data Source: 100% Web Scraping');
         console.log('='.repeat(60) + '\n');
 
         return agentState.data;
@@ -246,7 +248,8 @@ export function getAgentData() {
     return {
         ...agentState,
         isLive: true,
-        lastUpdated: agentState.lastRun
+        lastUpdated: agentState.lastRun,
+        dataSource: CONFIG.DATA_SOURCE
     };
 }
 
@@ -255,6 +258,7 @@ export function getAgentData() {
  */
 export async function startAgent() {
     console.log('[MASTER AGENT] 🚀 Agent starting...');
+    console.log('[MASTER AGENT] 📊 Data Source: Web Scraping (NO API keys required)');
     agentState.isRunning = true;
 
     // Run initial cycle

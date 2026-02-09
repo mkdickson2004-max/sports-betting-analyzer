@@ -197,7 +197,17 @@ export function useDataAgent(initialSport = 'nba') {
             const serverData = await response.json();
 
             // Server returns maps (objects), convert to arrays where needed
-            const games = serverData.games ? Object.values(serverData.games) : [];
+            const gamesRaw = serverData.games ? Object.values(serverData.games) : [];
+            const scrapedData = serverData.scrapedData || {};
+            const aiAnalysis = serverData.aiAnalysis || {};
+
+            // Attach scraped data and AI analysis to each game
+            const games = gamesRaw.map(game => ({
+                ...game,
+                scrapedData: scrapedData[game.id] || null,
+                aiAnalysis: aiAnalysis[game.id] || null
+            }));
+
             const odds = serverData.odds ? Object.values(serverData.odds) : [];
             const injuries = serverData.injuries || {};
             const news = serverData.news || [];

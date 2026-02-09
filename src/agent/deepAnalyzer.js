@@ -197,8 +197,14 @@ export const MODEL_METHODOLOGY = {
  */
 /**
  * Generate comprehensive deep analysis
+ * @param {Object} game - Game data
+ * @param {Object} odds - Odds data
+ * @param {Object} injuries - Injury data
+ * @param {Array} news - News articles
+ * @param {Object} stats - Team stats
+ * @param {Object} scrapedData - Pre-scraped comprehensive data (optional)
  */
-export async function generateDeepAnalysis(game, odds, injuries, news, stats = {}) {
+export async function generateDeepAnalysis(game, odds, injuries, news, stats = {}, scrapedData = null) {
     // Get matchup data
     const matchupData = await analyzeMatchups(
         game.homeTeam,
@@ -206,10 +212,17 @@ export async function generateDeepAnalysis(game, odds, injuries, news, stats = {
         injuries
     );
 
-    // Get all 10 advanced factors
-    // Pass the matching stats for this game
-    const gameStats = stats[game.id] || {};
-    const advancedFactors = await analyzeAllAdvancedFactors(game, odds, injuries, gameStats);
+    // Get all 12 advanced factors with scraped data
+    // Pass the scraped data if available, otherwise use stats
+    const gameStats = stats[game.id] || scrapedData?.stats || {};
+    const advancedFactors = await analyzeAllAdvancedFactors(
+        game,
+        odds,
+        injuries,
+        gameStats,
+        scrapedData,  // Pass scraped data to advanced factors
+        news || []
+    );
 
     // Calculate base factors
     const teamStrengthFactor = analyzeTeamStrength(game);
