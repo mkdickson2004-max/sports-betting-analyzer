@@ -1,0 +1,209 @@
+.dashboard {
+    background: var(--bg-card);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    margin-bottom: var(--space-xl);
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-lg);
+}
+
+.dashboard-header h2 {
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.dashboard-header .date {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+
+.stat-card {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-primary);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    position: relative;
+    overflow: hidden;
+    transition: all var(--transition-fast);
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-blue);
+}
+
+.stat-card.highlight {
+    border-color: var(--accent-green);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
+}
+
+.stat-glow {
+    position: absolute;
+    top: 50%;
+    right: -20px;
+    width: 80px;
+    height: 80px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.3;
+}
+
+.stat-icon {
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-info .stat-value {
+    font-size: 1.75rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.stat-card.highlight .stat-value {
+    color: var(--accent-green);
+}
+
+.stat-info .stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.top-picks {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+
+.top-picks h3 {
+    font-size: 1rem;
+    margin-bottom: var(--space-md);
+    color: var(--accent-yellow);
+}
+
+.picks-list {
+    display: flex;
+    gap: var(--space-md);
+}
+
+.pick-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-primary);
+}
+
+.pick-rank {
+    font-weight: 700;
+    color: var(--accent-yellow);
+    font-size: 0.9rem;
+}
+
+.pick-team {
+    flex: 1;
+    font-weight: 600;
+}
+
+.pick-prob {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.pick-edge {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent-green);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.sportsbooks-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-primary);
+}
+
+.sb-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.sb-list {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+}
+
+.sb-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 4px 10px;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .picks-list {
+        flex-direction: column;
+    }
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-sm);
+    }
+}

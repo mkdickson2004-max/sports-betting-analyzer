@@ -1,0 +1,230 @@
+.header {
+    background: linear-gradient(180deg, var(--surface-elevated) 0%, var(--card-bg) 100%);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+}
+
+.header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--space-md) var(--space-lg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-lg);
+}
+
+/* Logo */
+.logo {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.logo-icon {
+    font-size: 2rem;
+}
+
+.logo-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.logo-name {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.logo-tagline {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    font-weight: 500;
+}
+
+/* Sport Nav */
+.sport-nav {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-primary);
+    padding: 4px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    overflow-x: auto;
+    max-width: 600px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.sport-nav::-webkit-scrollbar {
+    display: none;
+}
+
+.sport-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sport-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.sport-btn.active {
+    background: var(--accent-blue);
+    color: white;
+    box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+}
+
+.sport-emoji {
+    font-size: 1rem;
+}
+
+/* Header Actions */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.data-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: var(--radius-md);
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent-green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.status-text {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent-green);
+}
+
+.last-update {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.refresh-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+    background: var(--accent-blue);
+    color: white;
+    border-color: var(--accent-blue);
+}
+
+.refresh-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.refresh-btn.refreshing .refresh-icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.refresh-icon {
+    font-size: 1rem;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .header-content {
+        flex-wrap: wrap;
+    }
+
+    .sport-nav {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+        margin-top: var(--space-sm);
+    }
+
+    .logo-tagline {
+        display: none;
+    }
+}
+
+@media (max-width: 600px) {
+    .sport-btn {
+        padding: 8px 12px;
+    }
+
+    .sport-name {
+        display: none;
+    }
+
+    .data-status {
+        display: none;
+    }
+
+    .refresh-text {
+        display: none;
+    }
+}

@@ -1,0 +1,420 @@
+.parlay-creator {
+    background: var(--card-bg);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    border: 1px solid var(--border-color);
+}
+
+.parlay-header {
+    margin-bottom: var(--space-xl);
+}
+
+.parlay-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-sm);
+}
+
+.parlay-header p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Suggested Parlays */
+.parlay-suggestions {
+    margin-bottom: var(--space-xl);
+}
+
+.parlay-suggestions h3,
+.custom-parlay-section h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-md);
+}
+
+.parlay-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-lg);
+}
+
+.parlay-card {
+    background: var(--surface-elevated);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+    border: 1px solid var(--border-color);
+    transition: all 0.2s;
+}
+
+.parlay-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.parlay-card.low {
+    border-left: 3px solid var(--accent-green);
+}
+
+.parlay-card.medium {
+    border-left: 3px solid var(--accent-blue);
+}
+
+.parlay-card.high {
+    border-left: 3px solid #f59e0b;
+}
+
+.parlay-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+}
+
+.parlay-name {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.parlay-ev {
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.parlay-ev.positive {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--accent-green);
+}
+
+.parlay-ev.negative {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.parlay-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: var(--space-md);
+}
+
+.parlay-legs {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.parlay-leg {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: 8px 12px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-sm);
+}
+
+.leg-team {
+    font-weight: 700;
+    color: var(--text-primary);
+    min-width: 50px;
+}
+
+.leg-odds {
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 60px;
+}
+
+.leg-edge {
+    font-size: 0.75rem;
+    color: var(--accent-green);
+    margin-left: auto;
+}
+
+.parlay-stats {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-md) 0;
+    border-top: 1px solid var(--border-color);
+    margin-bottom: var(--space-md);
+}
+
+.parlay-stats .stat {
+    text-align: center;
+}
+
+.parlay-stats .label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.parlay-stats .value {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.parlay-stats .value.win {
+    color: var(--accent-green);
+}
+
+.use-parlay-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--accent-blue);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.use-parlay-btn:hover {
+    background: #2563eb;
+    transform: scale(1.02);
+}
+
+/* Custom Parlay Section */
+.custom-parlay-section {
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--border-color);
+}
+
+.section-desc {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: var(--space-lg);
+}
+
+.no-bets-message {
+    text-align: center;
+    padding: var(--space-xl);
+    background: var(--surface-elevated);
+    border-radius: var(--radius-md);
+}
+
+.no-bets-message span {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: var(--space-md);
+}
+
+.no-bets-message p {
+    color: var(--text-muted);
+}
+
+.available-legs {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
+}
+
+.leg-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: 14px 16px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.leg-option:hover {
+    border-color: var(--accent-blue);
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.leg-option.selected {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: var(--accent-green);
+}
+
+.leg-option.strong {
+    border-left: 3px solid var(--accent-green);
+}
+
+.leg-option.medium {
+    border-left: 3px solid #f59e0b;
+}
+
+.leg-check {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--bg-primary);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.leg-option.selected .leg-check {
+    background: var(--accent-green);
+    color: white;
+}
+
+.leg-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+}
+
+.leg-matchup {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.leg-pick {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.leg-numbers {
+    display: flex;
+    gap: var(--space-md);
+    align-items: center;
+}
+
+.leg-numbers .leg-odds {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.leg-numbers .leg-edge {
+    font-size: 0.8rem;
+    color: var(--accent-green);
+    font-weight: 600;
+}
+
+.leg-numbers .leg-prob {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* Custom Parlay Summary */
+.custom-parlay-summary {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(59, 130, 246, 0.05));
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
+}
+
+.custom-parlay-summary h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: var(--space-md);
+}
+
+.custom-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+
+.stat-box {
+    text-align: center;
+    padding: var(--space-md);
+    background: var(--bg-primary);
+    border-radius: var(--radius-sm);
+}
+
+.stat-box .stat-label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.stat-box .stat-value {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.stat-box .stat-value.positive {
+    color: var(--accent-green);
+}
+
+.stat-box .stat-value.negative {
+    color: #ef4444;
+}
+
+.bet-calculator {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: var(--space-md);
+    border-top: 1px solid var(--border-color);
+}
+
+.bet-calculator label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.bet-calculator input {
+    width: 80px;
+    padding: 8px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.potential-win {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    color: var(--text-secondary);
+}
+
+.win-amount {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--accent-green);
+}
+
+.parlay-hint {
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: var(--space-lg);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .custom-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .bet-calculator {
+        flex-direction: column;
+        gap: var(--space-md);
+    }
+
+    .leg-numbers {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+    }
+}
