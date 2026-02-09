@@ -266,7 +266,23 @@ app.get('/health', (req, res) => {
     });
 });
 
+
+// Root route for API verification
+app.get('/', (req, res) => {
+    res.json({
+        message: "Sports Betting Analyzer API is Running 🚀",
+        status: "active",
+        endpoints: {
+            data: "/api/data?sport=nba",
+            health: "/health",
+            status: "/api/agent/status"
+        },
+        info: "This is the backend API. Please use the frontend application to view the dashboard."
+    });
+});
+
 app.listen(PORT, () => {
+
     console.log(`Server running on port ${PORT}`);
     if (isLLMConfigured()) {
         console.log('🤖 AI Agent: ACTIVE (Gemini LLM connected)');
