@@ -265,7 +265,19 @@ export async function scrapeAdvancedStats(teamAbbr, sport = 'nba') {
         // Calculate derived metrics
         const ppg = stats.offense.avgPoints?.value || stats.general.avgPoints?.value || 110;
         const oppPpg = stats.defense.avgPointsOpponent?.value || stats.defense.avgPointsAllowed?.value || 110;
-        const pace = stats.general.pace?.value || (stats.offense.fieldGoalsAttempted?.value * 0.44 + stats.offense.freeThrowsAttempted?.value) || 100;
+
+        // Correctly calculate pace using per-game averages
+        let pace = stats.general.pace?.value;
+        if (!pace) {
+            const fga = stats.offense.avgFieldGoalsAttempted?.value || stats.offense.fieldGoalsAttempted?.value / 82; // Fallback estimate
+            const fta = stats.offense.avgFreeThrowsAttempted?.value || stats.offense.freeThrowsAttempted?.value / 82;
+
+            if (fga && fta) {
+                pace = fga + 0.44 * fta;
+            } else {
+                pace = 100; // Default fallback
+            }
+        }
 
         stats.derived = {
             netRating: Math.round((ppg - oppPpg) * 10) / 10,

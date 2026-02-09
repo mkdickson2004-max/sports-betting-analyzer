@@ -87,16 +87,36 @@ export function analyzePaceOfPlay(homeTeam, awayTeam, homeStats, awayStats, scra
 
     // If we have offense stats, estimate pace
     if (!homePace || homePace === 100) {
-        const fga = hStats?.offense?.fieldGoalsAttempted?.value || hStats?.offense?.avgFieldGoalsAttempted?.value;
-        const fta = hStats?.offense?.freeThrowsAttempted?.value || hStats?.offense?.avgFreeThrowsAttempted?.value;
+        const fgaAvg = hStats?.offense?.avgFieldGoalsAttempted?.value;
+        let fga = fgaAvg || hStats?.offense?.fieldGoalsAttempted?.value;
+
+        // Sanity check: If FGA > 150, it's likely a season total
+        if (fga > 150) fga = fga / 82;
+
+        const ftaAvg = hStats?.offense?.avgFreeThrowsAttempted?.value;
+        let fta = ftaAvg || hStats?.offense?.freeThrowsAttempted?.value;
+
+        // Sanity check
+        if (fta > 100) fta = fta / 82;
+
         if (fga && fta) {
             homePace = fga + 0.44 * fta;
         }
     }
 
     if (!awayPace || awayPace === 100) {
-        const fga = aStats?.offense?.fieldGoalsAttempted?.value || aStats?.offense?.avgFieldGoalsAttempted?.value;
-        const fta = aStats?.offense?.freeThrowsAttempted?.value || aStats?.offense?.avgFreeThrowsAttempted?.value;
+        const fgaAvg = aStats?.offense?.avgFieldGoalsAttempted?.value;
+        let fga = fgaAvg || aStats?.offense?.fieldGoalsAttempted?.value;
+
+        // Sanity check
+        if (fga > 150) fga = fga / 82;
+
+        const ftaAvg = aStats?.offense?.avgFreeThrowsAttempted?.value;
+        let fta = ftaAvg || aStats?.offense?.freeThrowsAttempted?.value;
+
+        // Sanity check
+        if (fta > 100) fta = fta / 82;
+
         if (fga && fta) {
             awayPace = fga + 0.44 * fta;
         }
