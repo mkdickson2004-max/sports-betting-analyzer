@@ -1,16 +1,36 @@
-# React + Vite
+# 🏀 Sports Betting AI Analyzer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A powerful, autonomous sports betting analysis tool that uses AI to predict game outcomes, identify value bets, and provide deep insights into matchups.
 
-Currently, two official plugins are available:
+## 🏗️ Architecture
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+This application uses a modern **Client-Server** architecture to provide real-time data and analysis:
 
-## React Compiler
+### 1. The Frontend (Hosted on Vercel)
+- **Role**: The "Face" of the application.
+- **Tech**: React, Vite, CSS.
+- **Function**: This is what you see in your browser. It renders the UI, charts, and interactive elements.
+- **Why Vercel?**: Vercel is optimized for delivering static websites instantly to users around the world.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 2. The Backend (Hosted on Render)
+- **Role**: The "Brain" of the application.
+- **Tech**: Node.js, Express.
+- **Function**: This server runs 24/7. It autonomously scrapes data from ESPN, Odds APIs, and news sources. It processes this raw data and runs the AI models.
+- **Why Render?**: Unlike Vercel, Render allows us to run a continuous server that can perform heavy tasks like scraping and data processing without timing out.
 
-## Expanding the ESLint configuration
+### 🔗 How They Connect
+The Frontend (Vercel) sends invisible background requests to the Backend (Render) using the API URL we configured (`VITE_API_URL`).
+- **User visits website** -> **Frontend loads** -> **Frontend asks Backend for data** -> **Backend scrapes & replies** -> **Frontend shows data**.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🚀 Features
+- **Live Odds Scraping**: Real-time odds from multiple bookmakers.
+- **AI Deep Analysis**: Advanced matchup prowess using simulated historical data models.
+- **Value Bet Finder**: Identifies positive EV (Expected Value) betting opportunities.
+- **Backtesting Engine**: Verifies model accuracy against historical playoff games.
+
+## 🛠️ Local Development
+To run the full stack locally:
+```bash
+npm run dev:full
+```
+This starts both the React app (Client) and the Node server (API) simultaneously.

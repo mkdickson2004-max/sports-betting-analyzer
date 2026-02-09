@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import { runDataAgent } from './agent/dataAgent.js';
+import { fetchESPNScoreboard, fetchInjuryReports, fetchSportsNews, fetchTeamStats, dataStore } from './agent/dataAgent.js';
+import { scrapeAllOdds } from './agent/oddsScraper.js';
 import { fetchDetailedTeamStats } from './agent/playerStatsScraper.js';
 
 const app = express();
@@ -29,25 +30,53 @@ app.get('/api/data', async (req, res) => {
 
     console.log(`[SERVER] Fetching fresh data for ${sport}`);
     try {
-        // Run agent
-        const result = await runDataAgent(null, sport); // Pass sport to agent
+        // Step 1: Fetch core data from ESPN in parallel
+        const [games, injuries, news] = await Promise.all([
+            fetchESPNScoreboard(sport),
+            fetchInjuryReports(sport),
+            fetchSportsNews(sport)
+        ]);
 
-        if (result.success) {
-            cache[sport] = {
-                data: result.data,
-                lastUpdated: now
-            };
-            res.json(result.data);
-        } else {
-            res.status(500).json({ error: result.error });
-        }
+        // Step 2: Scrape odds using the multi-book scraper (NO API KEY REQUIRED)
+        console.log('[SERVER] Scraping odds...');
+        const oddsResult = await scrapeAllOdds(sport);
+        const odds = oddsResult.data || [];
+
+        // Step 3: Fetch team stats
+        const teamStats = await fetchTeamStats(sport);
+
+        // Step 4: Construct response object
+        const responseData = {
+            games: games.reduce((acc, g) => { acc[g.id] = g; return acc; }, {}),
+            odds: odds.reduce((acc, o) => { acc[o.id] = o; return acc; }, {}),
+            injuries: dataStore.injuries ? Object.fromEntries(dataStore.injuries) : injuries,
+            news: dataStore.news || news,
+            teamStats: dataStore.teamStats ? Object.fromEntries(dataStore.teamStats) : {},
+            eloRatings: dataStore.eloRatings ? Object.fromEntries(dataStore.eloRatings) : {},
+            lastUpdated: {
+                games: new Date().toISOString(),
+                odds: new Date().toISOString()
+            },
+            oddsSource: oddsResult.source,
+            booksIncluded: oddsResult.booksIncluded
+        };
+
+        // Update cache
+        cache[sport] = {
+            data: responseData,
+            lastUpdated: now
+        };
+
+        console.log(`[SERVER] Returning ${games.length} games, ${odds.length} odds markets`);
+        res.json(responseData);
+
     } catch (error) {
         console.error('[SERVER] Error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
 });
 
-// Endpoint for detailed team stats (heavy operation, cached separately or on demand)
+// Endpoint for detailed team stats
 app.get('/api/stats/:sport/:teamId', async (req, res) => {
     const { sport, teamId } = req.params;
     try {
@@ -60,6 +89,11 @@ app.get('/api/stats/:sport/:teamId', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', uptime: process.uptime() });
 });
 
 app.listen(PORT, () => {
