@@ -1,6 +1,7 @@
 {
     "name": "scraper-service",
     "version": "1.0.0",
+    "type": "module",
     "description": "Dedicated Puppeteer-based browser service for sports betting analysis",
     "main": "index.js",
     "scripts": {
