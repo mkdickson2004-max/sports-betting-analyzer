@@ -1,121 +1,91 @@
 /**
- * BROWSER AGENT
+ * BROWSER AGENT (Client / Proxy)
  * 
- * Provides autonomous web surfing capabilities to the AI system.
- * Uses Puppeteer to navigate, render JavaScript-heavy sites, and extract content.
+ * This module was refactored to be a LIGHTWEIGHT CLIENT.
+ * Instead of running Puppeteer (heavy), it calls the dedicated
+ * Scraper Microservice API.
  * 
- * Capabilities:
- * - Render dynamic modern web apps (SPA)
- * - Bypass basic bot detection (via stealth headers)
- * - extract relevant text for LLM analysis
+ * To use: Ensure the scraper-service is running on port 3002 (or SCRAPER_URL).
  */
 
-import puppeteer from 'puppeteer';
-import * as cheerio from 'cheerio';
+import fetch from 'node-fetch';
 
-class BrowserAgent {
+const SCRAPER_URL = process.env.SCRAPER_URL || 'http://localhost:3002'; // Default to local
+
+class BrowserAgentClient {
     constructor() {
-        this.browser = null;
-        this.page = null;
+        this.isActive = false;
     }
 
-    /**
-     * Launch the browser instance
-     */
     async launch() {
-        if (this.browser) return;
-
-        console.log('[BROWSER] Launching headless browser...');
-        this.browser = await puppeteer.launch({
-            headless: 'new',
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage', // Memory optimization
-                '--disable-gpu'
-            ]
-        });
-
-        this.page = await this.browser.newPage();
-
-        // Stealth: Set User-Agent
-        await this.page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36');
-
-        // Optimization: Block images/fonts (save bandwidth)
-        await this.page.setRequestInterception(true);
-        this.page.on('request', (req) => {
-            if (['image', 'font', 'media'].includes(req.resourceType())) {
-                req.abort();
-            } else {
-                req.continue();
-            }
-        });
-    }
-
-    /**
-     * Navigate to a URL and wait for meaningful content
-     */
-    async goto(url) {
-        if (!this.page) await this.launch();
-
-        console.log(`[BROWSER] Navigating to: ${url}`);
+        // No-op for client, just check if service is up?
         try {
-            await this.page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
-            return true;
+            const res = await fetch(`${SCRAPER_URL}/`);
+            if (res.ok) {
+                console.log('[BROWSER CLIENT] Connected to Scraper Service');
+                this.isActive = true;
+            } else {
+                console.warn('[BROWSER CLIENT] Scraper Service Unreachable');
+            }
         } catch (e) {
-            console.error(`[BROWSER] Navigation failed: ${e.message}`);
-            return false;
+            console.warn('[BROWSER CLIENT] Scraper Service Offline:', e.message);
         }
     }
 
-    /**
-     * Extract clean text content from the current page
-     */
-    async extractContent() {
-        if (!this.page) return '';
-
-        const html = await this.page.content();
-        const $ = cheerio.load(html);
-
-        // Remove clutter
-        $('script, style, nav, footer, iframe, ads, .ads, .sidebar').remove();
-
-        // Extract meaningful text
-        const title = $('title').text().trim();
-        const bodyText = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 15000); // Limit context size
-
-        return {
-            title,
-            url: this.page.url(),
-            content: bodyText
-        };
+    async goto(url) {
+        // No-op, handled by service per request
+        this.currentUrl = url;
+        return true;
     }
 
-    /**
-     * Perform a Google Search and return top results
-     */
+    async extractContent() {
+        if (!this.currentUrl) return { error: 'No URL set' };
+
+        console.log(`[BROWSER CLIENT] Requesting scrape for: ${this.currentUrl}`);
+        try {
+            const response = await fetch(`${SCRAPER_URL}/scrape`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: this.currentUrl })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                return data.data;
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (e) {
+            console.error('[BROWSER CLIENT] Scrape failed:', e.message);
+            return { error: 'Service Unavailable' };
+        }
+    }
+
     async googleSearch(query) {
-        await this.goto(`https://www.google.com/search?q=${encodeURIComponent(query)}`);
+        console.log(`[BROWSER CLIENT] Requesting search for: ${query}`);
+        try {
+            const response = await fetch(`${SCRAPER_URL}/search`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query })
+            });
 
-        // Extract search result links
-        const links = await this.page.evaluate(() => {
-            return Array.from(document.querySelectorAll('div.g a'))
-                .map(a => ({ title: a.innerText, url: a.href }))
-                .filter(item => item.url && item.title)
-                .slice(0, 5); // Top 5 results
-        });
-
-        return links;
+            const data = await response.json();
+            if (data.success) {
+                // Return search results array
+                return data.data.search_results;
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (e) {
+            console.error('[BROWSER CLIENT] Search failed:', e.message);
+            return [];
+        }
     }
 
     async close() {
-        if (this.browser) {
-            await this.browser.close();
-            this.browser = null;
-            this.page = null;
-            console.log('[BROWSER] Closed.');
-        }
+        // No-op
     }
 }
 
-export default new BrowserAgent();
+export default new BrowserAgentClient();
