@@ -56,6 +56,7 @@ let agentState = {
 
 /**
  * Calculate value bets based on current data
+ * Uses Deep Analysis if available, otherwise falls back to ELO
  */
 function calculateValueBets() {
     const valueBets = [];
@@ -64,13 +65,34 @@ function calculateValueBets() {
     if (!odds || odds.length === 0) return valueBets;
 
     odds.forEach(gameOdds => {
-        // Get ELO prediction
-        const prediction = eloEngine.predictMatchup(
-            gameOdds.homeTeam,
-            gameOdds.awayTeam
+        // Find matching game object to get Deep Analysis
+        const game = games.find(g =>
+            g.homeTeam.name === gameOdds.homeTeam ||
+            g.homeTeam.abbr === gameOdds.homeTeam ||
+            g.homeTeam.name === gameOdds.home_team
         );
 
-        if (prediction.error) return;
+        let homeWinProb, awayWinProb, modelType;
+        let reasons = [];
+
+        if (game?.aiAnalysis) {
+            // Use Deep Learning Model
+            homeWinProb = game.aiAnalysis.homeWinProb;
+            awayWinProb = game.aiAnalysis.awayWinProb;
+            modelType = 'Deep Learning Agent';
+            reasons = game.aiAnalysis.reasons.map(r => `${r.label}: ${r.reason}`);
+        } else {
+            // Fallback to ELO
+            const prediction = eloEngine.predictMatchup(
+                gameOdds.homeTeam,
+                gameOdds.awayTeam
+            );
+            if (prediction.error) return;
+            homeWinProb = prediction.homeWinProb;
+            awayWinProb = prediction.awayWinProb;
+            modelType = 'ELO Algorithm';
+            reasons = generateReasons(prediction, 'home'); // Placeholder
+        }
 
         // Find best odds across books
         let bestHomeOdds = -999;
@@ -99,8 +121,8 @@ function calculateValueBets() {
         const awayImplied = americanToImplied(bestAwayOdds);
 
         // Calculate edge
-        const homeEdge = ((prediction.homeWinProb / 100) - homeImplied) / homeImplied * 100;
-        const awayEdge = ((prediction.awayWinProb / 100) - awayImplied) / awayImplied * 100;
+        const homeEdge = ((homeWinProb / 100) - homeImplied) / homeImplied * 100;
+        const awayEdge = ((awayWinProb / 100) - awayImplied) / awayImplied * 100;
 
         // Flag value bets
         if (homeEdge >= CONFIG.MIN_EDGE_PERCENT) {
@@ -108,13 +130,14 @@ function calculateValueBets() {
                 game: `${gameOdds.awayTeam} @ ${gameOdds.homeTeam}`,
                 pick: gameOdds.homeTeam,
                 side: 'home',
-                modelProb: prediction.homeWinProb,
+                modelProb: homeWinProb,
                 marketProb: Math.round(homeImplied * 100),
                 edge: Math.round(homeEdge * 10) / 10,
                 bestOdds: bestHomeOdds,
                 bestBook: bestHomeBook,
                 startTime: gameOdds.startTime,
-                reasons: generateReasons(prediction, 'home')
+                reasons: reasons,
+                modelType
             });
         }
 
@@ -123,13 +146,14 @@ function calculateValueBets() {
                 game: `${gameOdds.awayTeam} @ ${gameOdds.homeTeam}`,
                 pick: gameOdds.awayTeam,
                 side: 'away',
-                modelProb: prediction.awayWinProb,
+                modelProb: awayWinProb,
                 marketProb: Math.round(awayImplied * 100),
                 edge: Math.round(awayEdge * 10) / 10,
                 bestOdds: bestAwayOdds,
                 bestBook: bestAwayBook,
                 startTime: gameOdds.startTime,
-                reasons: generateReasons(prediction, 'away')
+                reasons: reasons,
+                modelType
             });
         }
     });
@@ -151,7 +175,7 @@ function americanToImplied(odds) {
 }
 
 /**
- * Generate betting reasons
+ * Generate betting reasons (legacy ELO)
  */
 function generateReasons(prediction, side) {
     const reasons = [];
@@ -211,13 +235,8 @@ async function runCycle() {
         console.log('[MASTER AGENT] Step 4: Odds scraped by server...');
         agentState.stats.oddsUpdates++;
 
-        // 5. Calculate value bets
-        console.log('[MASTER AGENT] Step 5: Calculating value bets...');
-        agentState.data.valueBets = calculateValueBets();
-        agentState.stats.valueBetsFound = agentState.data.valueBets.length;
-
-        // 6. Running Deep Analysis on all games
-        console.log('[MASTER AGENT] Step 6: Running Deep Analysis on all games...');
+        // 5. Running Deep Analysis on all games (PRIORITY TASK)
+        console.log('[MASTER AGENT] Step 5: Running Deep Analysis on all games...');
 
         // We process games sequentially to avoid overwhelming the scraper
         for (const game of agentState.data.games) {
@@ -266,6 +285,11 @@ async function runCycle() {
                 };
             }
         }
+
+        // 6. Calculate value bets (NOW USES DEEP ANALYSIS RESULTS)
+        console.log('[MASTER AGENT] Step 6: Calculating value bets with AI Insights...');
+        agentState.data.valueBets = calculateValueBets();
+        agentState.stats.valueBetsFound = agentState.data.valueBets.length;
 
         // 7. Get ELO rankings
         agentState.data.eloRankings = eloEngine.getEloRankings();

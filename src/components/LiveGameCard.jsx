@@ -286,7 +286,7 @@ export default function LiveGameCard({ game, odds, injuries, news }) {
                             injuries={injuries}
                             news={news}
                             scrapedData={game.scrapedData}
-                            aiAnalysis={game.aiAnalysis}
+                            analysisData={game.aiAnalysis}
                         />
                     )}
 
