@@ -46,7 +46,7 @@ export default function Header({ activeSport, setActiveSport, onRefresh, lastUpd
                     <div className="logo">
                         <span className="logo-icon">📊</span>
                         <div className="logo-text">
-                            <span className="logo-name">Sharp</span>
+                            <span className="logo-name">Mucker</span>
                             <span className="logo-tagline">AI SPORTS INTELLIGENCE</span>
                         </div>
                     </div>
