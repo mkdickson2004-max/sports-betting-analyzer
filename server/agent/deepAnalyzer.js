@@ -1082,22 +1082,39 @@ function runMonteCarloSimulation(home, away) {
     let homeWins = 0;
     const iterations = 1000;
 
-    // Use default values if missing
-    const homeOff = home.offensiveRating || 110;
-    const homeDef = home.defensiveRating || 110;
-    const homePace = home.pace || 98;
+    // Helper to clean stats
+    const clean = (val, def) => parseFloat(val) || def;
 
-    const awayOff = away.offensiveRating || 110;
-    const awayDef = away.defensiveRating || 110;
-    const awayPace = away.pace || 98;
+    // Use default values if missing
+    const homePace = clean(home.pace, 98);
+    const awayPace = clean(away.pace, 98);
 
     // Average pace
     const gamePace = (homePace + awayPace) / 2;
 
+    // robust rating estimation: prioritize offRating, fallback to (PPG / Pace * 100), fallback to 110
+    const calcOff = (team, pace) => clean(team.offensiveRating, clean(team.ppg, 110) / (pace / 100));
+    const calcDef = (team, pace) => clean(team.defensiveRating, clean(team.oppg, 110) / (pace / 100));
+
+    const homeOff = calcOff(home, homePace);
+    const homeDef = calcDef(home, homePace);
+
+    const awayOff = calcOff(away, awayPace);
+    const awayDef = calcDef(away, awayPace);
+
+    // Apply home court advantage (adds ~2-3 pts to net rating)
+    const homeCourtAdv = 3.0;
+
     for (let i = 0; i < iterations; i++) {
         // Simulate points scored (simplistic model)
-        const homeScore = (homeOff + awayDef) / 2 * (gamePace / 100) + (Math.random() * 20 - 10);
-        const awayScore = (awayOff + homeDef) / 2 * (gamePace / 100) + (Math.random() * 20 - 10);
+        // Expected score = (TeamOff + OppDef) / 2 * Pace%
+
+        // Add randomness (standard deviation ~12 pts)
+        const homeRandom = (Math.random() + Math.random() + Math.random() - 1.5) * 12; // Normal-ish dist
+        const awayRandom = (Math.random() + Math.random() + Math.random() - 1.5) * 12;
+
+        const homeScore = ((homeOff + awayDef) / 2 + homeCourtAdv) * (gamePace / 100) + homeRandom;
+        const awayScore = ((awayOff + homeDef) / 2) * (gamePace / 100) + awayRandom;
 
         if (homeScore > awayScore) homeWins++;
     }
