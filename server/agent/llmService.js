@@ -183,7 +183,9 @@ export async function generateLLMAnalysis(game, factors, odds, injuries, socialD
     Social Sentiment: ${JSON.stringify(socialData || {}).substring(0, 500)}
     Monte Carlo (Totals Model): ${JSON.stringify(monteCarloData || "No simulation")}
     
-    Goal: Identify betting edge. Use Monte Carlo specifically for Over/Under totals.
+    Goal: Identify betting edge. YOU MUST USE the provided Monte Carlo data for Over/Under totals.
+    If totalScore is provided, your "projectedTotal" in JSON MUST match it.
+    
     Output JSON (No Markdown):
     {
       "narrative": "Analysis summary including social sentiment and Monte Carlo projection for total...",
@@ -192,7 +194,7 @@ export async function generateLLMAnalysis(game, factors, odds, injuries, socialD
       "prediction": { "winner": "Team", "spreadCover": "Team", "total": "Over/Under" },
       "enhancedFactors": { 
          "Social": { "advantage": "Home/Away/None", "insight": "Brief insight" },
-         "MonteCarlo": { "projectedTotal": 220, "edge": "Over/Under/None" }
+         "MonteCarlo": { "projectedTotal": 123, "edge": "Over/Under/None", "simulationScore": "away-home" }
       }
     }
     `;

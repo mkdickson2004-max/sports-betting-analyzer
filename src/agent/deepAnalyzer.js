@@ -253,11 +253,14 @@ export async function generateDeepAnalysis(game, odds, injuries, news, stats = {
     // Monte Carlo Simulation (Run 1000 iterations based on team stats)
     const simHome = scrapedData?.stats?.home?.derived || gameStats.home?.derived || {};
     const simAway = scrapedData?.stats?.away?.derived || gameStats.away?.derived || {};
-    // Simulation returns home win probability (0.0 - 1.0)
-    const simWinProb = runMonteCarloSimulation(
+
+    // Simulation returns full projection object
+    const mcResults = runMonteCarloSimulation(
         simHome.offensiveRating ? simHome : { offensiveRating: 114, defensiveRating: 114, pace: 99 },
         simAway.offensiveRating ? simAway : { offensiveRating: 114, defensiveRating: 114, pace: 99 }
     );
+
+    const simWinProb = mcResults.homeWinProb;
 
     // Calculate final probability with advanced factors
     const factorProbability = calculateModelProbabilityAdvanced(allFactors);
@@ -341,35 +344,44 @@ export async function generateDeepAnalysis(game, odds, injuries, news, stats = {
         // Bet sizing suggestion
         betSizing: suggestBetSize(edge, confidence),
 
-        // Totals recommendation from pace analysis
-        totalsAnalysis: getTotalsRecommendation(advancedFactors.factors)
+        // Totals recommendation from Monte Carlo + Pace analysis
+        totalsAnalysis: getTotalsRecommendation(advancedFactors.factors, mcResults)
     };
 }
 
 /**
  * Get totals recommendation from advanced factors
  */
-function getTotalsRecommendation(factors) {
+function getTotalsRecommendation(factors, mcResults = null) {
     const paceFactor = factors.find(f => f.factor === 'Pace of Play');
     const refFactor = factors.find(f => f.factor === 'Referee Tendencies');
 
     let overScore = 0;
     let underScore = 0;
 
-    if (paceFactor?.totalsRecommendation === 'over') overScore += 2;
-    if (paceFactor?.totalsRecommendation === 'under') underScore += 2;
+    // Use Monte Carlo as the primary source of truth for the projected total
+    // If no MC results, fall back to pace-based heuristic (but improved)
+    const projectedTotal = mcResults?.totalScore || paceFactor?.projectedTotal || 222;
+
+    // Get implied total from odds if available to compare
+    const impliedTotal = 220; // Default placeholder
+
+    if (mcResults && mcResults.totalScore > impliedTotal + 2) overScore += 3;
+    if (mcResults && mcResults.totalScore < impliedTotal - 2) underScore += 3;
+
+    if (paceFactor?.totalsRecommendation === 'over') overScore += 1;
+    if (paceFactor?.totalsRecommendation === 'under') underScore += 1;
 
     if (refFactor?.recommendation?.includes('OVER')) overScore += 1;
     if (refFactor?.recommendation?.includes('UNDER')) underScore += 1;
 
-    const projectedTotal = paceFactor?.projectedTotal || 220;
-
     return {
         lean: overScore > underScore ? 'OVER' : underScore > overScore ? 'UNDER' : 'NO LEAN',
-        confidence: Math.abs(overScore - underScore) > 1 ? 'high' : 'medium',
-        projectedTotal,
+        confidence: Math.abs(overScore - underScore) > 2 ? 'high' : 'medium',
+        projectedTotal: Math.round(projectedTotal),
         paceInsight: paceFactor?.insight,
-        refInsight: refFactor?.insight
+        refInsight: refFactor?.insight,
+        mcProjection: mcResults ? `${mcResults.awayScore}-${mcResults.homeScore}` : null
     };
 }
 
@@ -1124,6 +1136,8 @@ const BENCH_UNIT_RATINGS = {
  */
 function runMonteCarloSimulation(home, away, iterations = 1000) {
     let homeWins = 0;
+    let totalHomeScore = 0;
+    let totalAwayScore = 0;
 
     // Base ratings (fallback to league avg 115 if missing)
     const hOrtg = parseFloat(home.offensiveRating) || 115.0;
@@ -1139,17 +1153,28 @@ function runMonteCarloSimulation(home, away, iterations = 1000) {
         // Box-Muller transform for normal distribution
         const u1 = Math.random();
         const u2 = Math.random();
-        const randStd = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+        const z1 = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+        const z2 = Math.sqrt(-2.0 * Math.log(u1)) * Math.sin(2.0 * Math.PI * u2);
 
         // Calculate projected score for this iteration
         // Home Score = (Home Offense + Away Defense / 2) * Pace + Home Court(3) + Noise
-        const hScore = ((hOrtg + aDrtg) / 2) * (pace / 100) + 3.0 + (randStd * stdDev);
-        const aScore = ((aOrtg + hDrtg) / 2) * (pace / 100) + (randStd * stdDev * 0.95); // Slightly uncorrelated noise
+        const hScore = ((hOrtg + aDrtg) / 2) * (pace / 100) + 3.0 + (z1 * stdDev);
+        const aScore = ((aOrtg + hDrtg) / 2) * (pace / 100) + (z2 * stdDev);
 
+        totalHomeScore += hScore;
+        totalAwayScore += aScore;
         if (hScore > aScore) homeWins++;
     }
 
-    return homeWins / iterations;
+    const avgHome = totalHomeScore / iterations;
+    const avgAway = totalAwayScore / iterations;
+
+    return {
+        homeWinProb: homeWins / iterations,
+        homeScore: Math.round(avgHome),
+        awayScore: Math.round(avgAway),
+        totalScore: Math.round(avgHome + avgAway)
+    };
 }
 
 export default {

@@ -51,6 +51,12 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
             },
             keyInsights: data.keyInsights || [],
             risks: data.risks || data.riskFactors || [],
+            totalsAnalysis: data.totalsAnalysis || (data.enhancedFactors?.MonteCarlo ? {
+                lean: data.enhancedFactors.MonteCarlo.edge?.toUpperCase(),
+                confidence: 'high',
+                projectedTotal: data.enhancedFactors.MonteCarlo.projectedTotal,
+                paceInsight: 'AI Monte Carlo Projection'
+            } : null),
             homeTeam: data.homeTeam || game.homeTeam?.abbr,
             awayTeam: data.awayTeam || game.awayTeam?.abbr
         };
@@ -413,6 +419,11 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
                                 <p className="projected-total">
                                     Projected Total: <strong>{analysis.totalsAnalysis.projectedTotal}</strong>
                                 </p>
+                                {analysis.totalsAnalysis.mcProjection && (
+                                    <p className="simulation-result">
+                                        🎲 Simulation Result: <strong>{analysis.totalsAnalysis.mcProjection}</strong>
+                                    </p>
+                                )}
                                 {analysis.totalsAnalysis.paceInsight && (
                                     <p className="totals-insight">{analysis.totalsAnalysis.paceInsight}</p>
                                 )}

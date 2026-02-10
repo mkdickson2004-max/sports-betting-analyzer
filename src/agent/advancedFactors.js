@@ -123,8 +123,8 @@ export function analyzePaceOfPlay(homeTeam, awayTeam, homeStats, awayStats, scra
     }
 
     const avgPace = (homePace + awayPace) / 2;
-    const isHighPace = avgPace > 100;
-    const projectedTotal = Math.round(avgPace * 2.1);
+    const isHighPace = avgPace > 102; // Modern NBA pace is higher
+    const projectedTotal = Math.round(avgPace * 2.25); // Better heuristic for modern scoring
 
     return {
         factor: 'Pace of Play',
@@ -132,11 +132,11 @@ export function analyzePaceOfPlay(homeTeam, awayTeam, homeStats, awayStats, scra
         weight: 0.06,
         dataAvailable: true,
         excluded: false,
-        advantage: isHighPace ? 'over' : 'under',
+        advantage: projectedTotal > 230 ? 'over' : projectedTotal < 220 ? 'under' : 'neutral',
         impact: Math.abs(avgPace - 100) > 3 ? 6 : 3,
-        insight: `Projected pace: ${avgPace.toFixed(1)}. ${isHighPace ? 'Fast-paced matchup favors OVER.' : 'Slow-paced grind expected, lean UNDER.'}`,
+        insight: `Projected pace: ${avgPace.toFixed(1)}. Total expected around ${projectedTotal}. ${projectedTotal > 228 ? 'High-scoring matchup favors OVER.' : projectedTotal < 218 ? 'Lower scoring grind expected.' : 'Neutral pace expected.'}`,
         probAdjustment: 0,
-        totalsRecommendation: isHighPace ? 'over' : 'under',
+        totalsRecommendation: projectedTotal > 230 ? 'over' : projectedTotal < 220 ? 'under' : 'neutral',
         projectedTotal,
         data: {
             homePace: homePace.toFixed(1),
