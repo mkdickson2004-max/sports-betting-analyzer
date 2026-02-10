@@ -19,14 +19,24 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
                     action: data.confidenceRating > 75 ? 'STRONG BET' : 'LEAN',
                     team: data.prediction?.winner || 'Unknown',
                     odds: -110, // Placeholder if not parsed
-                    book: 'Best Available'
+                    book: 'Best Available',
+                    reasoning: data.narrative || "AI Analysis Generated"
                 },
                 confidence: data.confidenceRating || 0,
                 homeEdge: data.modelProbability ? (betSide === 'home' ? (data.modelProbability - 0.5) * 100 : -(data.modelProbability - 0.5) * 100) : 0,
                 betSizing: { units: data.confidenceRating > 80 ? 2 : 1, description: data.confidenceRating > 80 ? '2 Units' : '1 Unit' },
                 summary: data.narrative || data.analysis || '', // Narrative text
-                factors: data.factors || data.enhancedFactors || {},
-                keyInsights: data.keyInsights || []
+                factors: (() => {
+                    const baseFactors = data.factors || data.enhancedFactors || {};
+                    return {
+                        ...baseFactors,
+                        matchups: baseFactors.matchups || { summary: {}, positions: [] },
+                        teamStrength: baseFactors.teamStrength || { home: {}, away: {}, advantage: 'even' },
+                        form: baseFactors.form || { home: {}, away: {}, advantage: 'even' }
+                    };
+                })(),
+                keyInsights: data.keyInsights || [],
+                risks: data.risks || data.riskFactors || []
             };
         }
 
