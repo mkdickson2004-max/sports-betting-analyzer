@@ -7,40 +7,53 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
     const normalizeAnalysis = (data) => {
         if (!data) return null;
 
-        // If it's already in frontend format (has recommendation), return as is
-        if (data.recommendation) return data;
+        // Calculate betSide and homeEdge if we have LLM data
+        let homeEdge = data.homeEdge || 0;
+        let recommendation = data.recommendation;
 
-        // If it's Backend AI format (from LLM)
         if (data.prediction || data.narrative) {
             const betSide = data.prediction?.winner === game.homeTeam?.name ? 'home' : 'away';
-            return {
-                modelInfo: { name: 'Genesis AI (Server)', description: 'GPT-4o Powered Analysis' },
-                recommendation: {
+            homeEdge = data.modelProbability ? (betSide === 'home' ? (data.modelProbability - 0.5) * 100 : -(data.modelProbability - 0.5) * 100) : homeEdge;
+
+            if (!recommendation) {
+                recommendation = {
                     action: data.confidenceRating > 75 ? 'STRONG BET' : 'LEAN',
                     team: data.prediction?.winner || 'Unknown',
-                    odds: -110, // Placeholder if not parsed
+                    odds: -110,
                     book: 'Best Available',
                     reasoning: data.narrative || "AI Analysis Generated"
-                },
-                confidence: data.confidenceRating || 0,
-                homeEdge: data.modelProbability ? (betSide === 'home' ? (data.modelProbability - 0.5) * 100 : -(data.modelProbability - 0.5) * 100) : 0,
-                betSizing: { units: data.confidenceRating > 80 ? 2 : 1, description: data.confidenceRating > 80 ? '2 Units' : '1 Unit' },
-                summary: data.narrative || data.analysis || '', // Narrative text
-                factors: (() => {
-                    const baseFactors = data.factors || data.enhancedFactors || {};
-                    return {
-                        ...baseFactors,
-                        matchups: baseFactors.matchups || { summary: {}, positions: [] },
-                        teamStrength: baseFactors.teamStrength || { home: {}, away: {}, advantage: 'even' },
-                        form: baseFactors.form || { home: {}, away: {}, advantage: 'even' }
-                    };
-                })(),
-                keyInsights: data.keyInsights || [],
-                risks: data.risks || data.riskFactors || []
-            };
+                };
+            }
         }
 
-        return data; // Fallback
+        // Base factors from whatever source we have
+        const baseFactors = data.factors || data.enhancedFactors || {};
+
+        return {
+            modelInfo: data.modelInfo || { name: 'Genesis AI', description: 'Advanced Decision Engine' },
+            recommendation: recommendation || {
+                action: 'ANALYZING',
+                team: 'Unknown',
+                reasoning: data.narrative || data.analysis || "Analysis in progress..."
+            },
+            confidence: data.confidence || data.confidenceRating || 0,
+            homeEdge: homeEdge,
+            betSizing: data.betSizing || { units: data.confidenceRating > 80 ? 2 : 1, description: data.confidenceRating > 80 ? '2 Units' : '1 Unit' },
+            summary: data.summary || data.narrative || data.analysis || '',
+            factors: {
+                ...baseFactors,
+                matchups: baseFactors.matchups || { summary: {}, positions: [] },
+                teamStrength: baseFactors.teamStrength || { home: {}, away: {}, advantage: 'even' },
+                form: baseFactors.form || { home: {}, away: {}, advantage: 'even' },
+                injuries: baseFactors.injuries || { home: { out: [] }, away: { out: [] }, advantage: 'even' },
+                situational: baseFactors.situational || { home: {}, away: {}, advantage: 'even' },
+                market: baseFactors.market || { booksAnalyzed: 0 }
+            },
+            keyInsights: data.keyInsights || [],
+            risks: data.risks || data.riskFactors || [],
+            homeTeam: data.homeTeam || game.homeTeam?.abbr,
+            awayTeam: data.awayTeam || game.awayTeam?.abbr
+        };
     };
 
     const [analysis, setAnalysis] = useState(normalizeAnalysis(analysisData) || null);
@@ -291,17 +304,17 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
                     {/* Reasoning Breakdown */}
                     <div className="reasoning-block">
                         <p className="reasoning-summary">
-                            {typeof analysis.recommendation.reasoning === 'string'
+                            {typeof analysis.recommendation?.reasoning === 'string'
                                 ? analysis.recommendation.reasoning
-                                : analysis.recommendation.reasoning.summary}
+                                : (analysis.recommendation?.reasoning?.summary || analysis.summary || "No reasoning available")}
                         </p>
 
                         {/* Key Driving Factors */}
-                        {analysis.recommendation.reasoning.keyFactors && (
+                        {analysis.recommendation?.reasoning?.keyFactors && (
                             <div className="key-drivers">
                                 <h4>✅ Why to Bet</h4>
                                 <div className="drivers-list">
-                                    {analysis.recommendation.reasoning.keyFactors.map((factor, idx) => (
+                                    {analysis.recommendation?.reasoning?.keyFactors?.map((factor, idx) => (
                                         <div key={idx} className="driver-item">
                                             <div className="driver-header">
                                                 <span className="driver-icon">{factor.icon}</span>
@@ -696,11 +709,11 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
                 <div className="analysis-section matchups-section">
                     <div className="matchups-summary">
                         <div className="matchup-score">
-                            <span className="home-wins">{analysis.factors.matchups.summary.homeWins}</span>
+                            <span className="home-wins">{analysis.factors?.matchups?.summary?.homeWins ?? 0}</span>
                             <span className="vs">-</span>
-                            <span className="away-wins">{analysis.factors.matchups.summary.awayWins}</span>
+                            <span className="away-wins">{analysis.factors?.matchups?.summary?.awayWins ?? 0}</span>
                         </div>
-                        <p className="matchup-advantage">{analysis.factors.matchups.overallAdvantage}</p>
+                        <p className="matchup-advantage">{analysis.factors?.matchups?.overallAdvantage || 'Analyzing Matchup...'}</p>
 
                         <div className="per-comparison">
                             <div className="per-item">
@@ -713,8 +726,8 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
                             </div>
                             <div className="per-item diff">
                                 <span className="per-label">Differential</span>
-                                <span className={`per-value ${analysis.factors.matchups.perDifferential.diff > 0 ? 'positive' : 'negative'}`}>
-                                    {analysis.factors.matchups.perDifferential.diff > 0 ? '+' : ''}{analysis.factors.matchups.perDifferential.diff}
+                                <span className={`per-value ${(analysis.factors?.matchups?.perDifferential?.diff || 0) > 0 ? 'positive' : 'negative'}`}>
+                                    {(analysis.factors?.matchups?.perDifferential?.diff || 0) > 0 ? '+' : ''}{analysis.factors?.matchups?.perDifferential?.diff || 0}
                                 </span>
                             </div>
                         </div>
@@ -722,7 +735,7 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
 
                     {/* Position-by-Position */}
                     <div className="position-matchups">
-                        {analysis.factors.matchups.positions.map((pos, i) => (
+                        {(analysis.factors?.matchups?.positions || []).map((pos, i) => (
                             <div key={i} className={`position-card ${pos.advantage}`}>
                                 <div className="position-header">
                                     <span className="position-name">{pos.position}</span>
@@ -798,19 +811,19 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
                         <div className="factor-teams">
                             <div className="factor-team">
                                 <span className="team-name">{analysis.homeTeam}</span>
-                                <span className={`trend-badge ${analysis.factors.form.home.trend}`}>
-                                    {analysis.factors.form.home.trend.toUpperCase()}
+                                <span className={`trend-badge ${analysis.factors?.form?.home?.trend}`}>
+                                    {analysis.factors?.form?.home?.trend?.toUpperCase() || 'NEUTRAL'}
                                 </span>
-                                <span>L5: {analysis.factors.form.home.last5Record}</span>
-                                <span>+/- {analysis.factors.form.home.pointDiffL5}</span>
+                                <span>L5: {analysis.factors?.form?.home?.last5Record || '-'}</span>
+                                <span>+/- {analysis.factors?.form?.home?.pointDiffL5 || 0}</span>
                             </div>
                             <div className="factor-team">
                                 <span className="team-name">{analysis.awayTeam}</span>
-                                <span className={`trend-badge ${analysis.factors.form.away.trend}`}>
-                                    {analysis.factors.form.away.trend.toUpperCase()}
+                                <span className={`trend-badge ${analysis.factors?.form?.away?.trend}`}>
+                                    {analysis.factors?.form?.away?.trend?.toUpperCase() || 'NEUTRAL'}
                                 </span>
-                                <span>L5: {analysis.factors.form.away.last5Record}</span>
-                                <span>+/- {analysis.factors.form.away.pointDiffL5}</span>
+                                <span>L5: {analysis.factors?.form?.away?.last5Record || '-'}</span>
+                                <span>+/- {analysis.factors?.form?.away?.pointDiffL5 || 0}</span>
                             </div>
                         </div>
                     </FactorCard>
@@ -825,24 +838,24 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
                         <div className="factor-teams">
                             <div className="factor-team">
                                 <span className="team-name">{analysis.homeTeam}</span>
-                                <span className="health-rating">Health: {analysis.factors.injuries.home.healthRating}%</span>
-                                {analysis.factors.injuries.home.out.length > 0 && (
+                                <span className="health-rating">Health: {analysis.factors?.injuries?.home?.healthRating ?? 100}%</span>
+                                {(analysis.factors?.injuries?.home?.out?.length || 0) > 0 && (
                                     <div className="injury-list">
                                         <span className="injury-label">OUT:</span>
-                                        {analysis.factors.injuries.home.out.map((p, i) => (
-                                            <span key={i} className="out-player">{p.name}</span>
+                                        {(analysis.factors?.injuries?.home?.out || []).map((p, i) => (
+                                            <span key={i} className="out-player">{p.name || p}</span>
                                         ))}
                                     </div>
                                 )}
                             </div>
                             <div className="factor-team">
                                 <span className="team-name">{analysis.awayTeam}</span>
-                                <span className="health-rating">Health: {analysis.factors.injuries.away.healthRating}%</span>
-                                {analysis.factors.injuries.away.out.length > 0 && (
+                                <span className="health-rating">Health: {analysis.factors?.injuries?.away?.healthRating ?? 100}%</span>
+                                {(analysis.factors?.injuries?.away?.out?.length || 0) > 0 && (
                                     <div className="injury-list">
                                         <span className="injury-label">OUT:</span>
-                                        {analysis.factors.injuries.away.out.map((p, i) => (
-                                            <span key={i} className="out-player">{p.name}</span>
+                                        {(analysis.factors?.injuries?.away?.out || []).map((p, i) => (
+                                            <span key={i} className="out-player">{p.name || p}</span>
                                         ))}
                                     </div>
                                 )}
