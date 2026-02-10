@@ -65,7 +65,8 @@ async function scrapeESPN(sport = 'nba') {
 
         data.events?.forEach(event => {
             // Filter out completed games
-            if (event.status?.type?.completed) return;
+            // 'post' means post-game (finished)
+            if (event.status?.type?.completed || event.status?.type?.state === 'post') return;
 
             const comp = event.competitions?.[0];
             if (!comp) return;
