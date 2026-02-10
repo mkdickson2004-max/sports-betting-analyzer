@@ -198,7 +198,7 @@ export const MODEL_METHODOLOGY = {
 /**
  * Generate comprehensive deep analysis
  */
-export async function generateDeepAnalysis(game, odds, injuries, news, stats = {}) {
+export async function generateDeepAnalysis(game, odds, injuries, news, stats = {}, scrapedData = {}) {
     // Get matchup data
     const matchupData = await analyzeMatchups(
         game.homeTeam,
@@ -1073,6 +1073,36 @@ function suggestBetSize(edge, confidence) {
     } else {
         return { units: 3, description: '3 units - max bet (rare edge)' };
     }
+}
+
+/**
+ * Run Monte Carlo Simulation
+ */
+function runMonteCarloSimulation(home, away) {
+    let homeWins = 0;
+    const iterations = 1000;
+
+    // Use default values if missing
+    const homeOff = home.offensiveRating || 110;
+    const homeDef = home.defensiveRating || 110;
+    const homePace = home.pace || 98;
+
+    const awayOff = away.offensiveRating || 110;
+    const awayDef = away.defensiveRating || 110;
+    const awayPace = away.pace || 98;
+
+    // Average pace
+    const gamePace = (homePace + awayPace) / 2;
+
+    for (let i = 0; i < iterations; i++) {
+        // Simulate points scored (simplistic model)
+        const homeScore = (homeOff + awayDef) / 2 * (gamePace / 100) + (Math.random() * 20 - 10);
+        const awayScore = (awayOff + homeDef) / 2 * (gamePace / 100) + (Math.random() * 20 - 10);
+
+        if (homeScore > awayScore) homeWins++;
+    }
+
+    return homeWins / iterations;
 }
 
 export default {
