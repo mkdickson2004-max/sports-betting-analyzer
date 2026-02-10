@@ -244,8 +244,21 @@ export async function generateDeepAnalysis(game, odds, injuries, news, stats = {
         advanced: advancedFactors
     };
 
+    // Monte Carlo Simulation (Run 1000 iterations based on team stats)
+    const simHome = scrapedData?.stats?.home?.derived || {};
+    const simAway = scrapedData?.stats?.away?.derived || {};
+    // Simulation returns home win probability (0.0 - 1.0)
+    const simWinProb = runMonteCarloSimulation(
+        simHome.offensiveRating ? simHome : { offensiveRating: 114, defensiveRating: 114, pace: 99 },
+        simAway.offensiveRating ? simAway : { offensiveRating: 114, defensiveRating: 114, pace: 99 }
+    );
+
     // Calculate final probability with advanced factors
-    const modelProbability = calculateModelProbabilityAdvanced(allFactors);
+    const factorProbability = calculateModelProbabilityAdvanced(allFactors);
+
+    // BLENDED MODEL: 75% Factors (Qualitative + Quantitative) + 25% Pure Monte Carlo (Quantitative Simulation)
+    // This adds robustness against bias and relies on statistical variance
+    const modelProbability = (factorProbability * 0.75) + (simWinProb * 0.25);
 
     // Calculate edge vs market
     const marketProb = marketFactor.homeImplied / 100;
@@ -580,19 +593,19 @@ function calculateInjuryImpactScore(injuries) {
     let score = 0;
 
     injuries.forEach(inj => {
-        const status = inj.status?.toLowerCase();
+        const cleanName = inj.name?.replace(/\./g, '')?.replace(/ Jr/g, '')?.trim();
+        const starValue = Object.keys(STAR_PLAYER_IMPACT).find(key => cleanName?.includes(key));
+        const playerValue = starValue ? STAR_PLAYER_IMPACT[starValue] : 1.5;
 
-        // Base impact by status
-        if (status === 'out') score += 20;
-        else if (status === 'doubtful') score += 15;
-        else if (status === 'questionable') score += 8;
-        else if (status === 'day-to-day') score += 5;
-
-        // Additional impact for key players (would need player importance data)
-        // For now, assume all injuries equally impactful
+        // Status multipliers
+        const status = inj.status?.toLowerCase() || '';
+        if (status.includes('out')) score += playerValue * 5;
+        else if (status.includes('doubtful')) score += playerValue * 3;
+        else if (status.includes('questionable')) score += playerValue * 1.5;
+        else if (status.includes('day-to-day')) score += playerValue * 0.5;
     });
 
-    return Math.min(100, score);
+    return Math.min(100, Math.round(score));
 }
 
 /**
@@ -1068,6 +1081,50 @@ function suggestBetSize(edge, confidence) {
     } else {
         return { units: 3, description: '3 units - max bet (rare edge)' };
     }
+}
+
+// --- NEW: Star Player Impact Dictionary ---
+const STAR_PLAYER_IMPACT = {
+    'Nikola Jokic': 9.5, 'Luka Doncic': 8.5, 'Giannis Antetokounmpo': 8.0, 'Joel Embiid': 8.0,
+    'Shai Gilgeous-Alexander': 7.5, 'Jayson Tatum': 6.0, 'Stephen Curry': 6.5, 'Kevin Durant': 6.0,
+    'LeBron James': 5.5, 'Anthony Davis': 6.0, 'Devin Booker': 5.0, 'Anthony Edwards': 5.0,
+    'Tyrese Haliburton': 4.5, 'Ja Morant': 4.5, 'Donovan Mitchell': 4.5, 'Kawhi Leonard': 4.5,
+    'Jimmy Butler': 4.0, 'Jalen Brunson': 4.5, 'Trae Young': 4.0, 'Damian Lillard': 4.0,
+    'De Aaron Fox': 3.5, 'Domantas Sabonis': 3.5, 'Bam Adebayo': 3.5, 'Paul George': 3.5,
+    'Kyrie Irving': 3.5, 'Zion Williamson': 3.5, 'Victor Wembanyama': 4.0, 'LaMelo Ball': 3.5
+};
+
+/**
+ * Monte Carlo Simulation Engine
+ */
+function runMonteCarloSimulation(home, away, iterations = 1000) {
+    let homeWins = 0;
+
+    // Base ratings (fallback to league avg 115 if missing)
+    const hOrtg = parseFloat(home.offensiveRating) || 115.0;
+    const hDrtg = parseFloat(home.defensiveRating) || 115.0;
+    const aOrtg = parseFloat(away.offensiveRating) || 115.0;
+    const aDrtg = parseFloat(away.defensiveRating) || 115.0;
+    const pace = (parseFloat(home.pace) + parseFloat(away.pace)) / 2 || 99.0;
+
+    // Standard deviation for NBA scores (approx 12 points)
+    const stdDev = 12.0;
+
+    for (let i = 0; i < iterations; i++) {
+        // Box-Muller transform for normal distribution
+        const u1 = Math.random();
+        const u2 = Math.random();
+        const randStd = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+
+        // Calculate projected score for this iteration
+        // Home Score = (Home Offense + Away Defense / 2) * Pace + Home Court(3) + Noise
+        const hScore = ((hOrtg + aDrtg) / 2) * (pace / 100) + 3.0 + (randStd * stdDev);
+        const aScore = ((aOrtg + hDrtg) / 2) * (pace / 100) + (randStd * stdDev * 0.95); // Slightly uncorrelated noise
+
+        if (hScore > aScore) homeWins++;
+    }
+
+    return homeWins / iterations;
 }
 
 export default {
