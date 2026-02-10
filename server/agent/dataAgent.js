@@ -109,6 +109,8 @@ export async function fetchESPNScoreboard(sport = 'nba') {
                 id: event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'home')?.team?.id,
                 name: event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'home')?.team?.displayName,
                 abbr: event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'home')?.team?.abbreviation,
+                logo: event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'home')?.team?.logo ||
+                    event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'home')?.team?.logos?.[0]?.href,
                 score: event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'home')?.score,
                 record: event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'home')?.records?.[0]?.summary
             },
@@ -116,6 +118,8 @@ export async function fetchESPNScoreboard(sport = 'nba') {
                 id: event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'away')?.team?.id,
                 name: event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'away')?.team?.displayName,
                 abbr: event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'away')?.team?.abbreviation,
+                logo: event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'away')?.team?.logo ||
+                    event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'away')?.team?.logos?.[0]?.href,
                 score: event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'away')?.score,
                 record: event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'away')?.records?.[0]?.summary
             }
