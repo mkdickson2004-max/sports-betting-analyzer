@@ -16,8 +16,19 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Redirect root to frontend
-app.get('/', (req, res) => {
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ... (imports)
+
+// Serve Static Frontend (Production)
+app.use(express.static(path.join(__dirname, '../dist')));
+
+// API Status Endpoint
+app.get('/api/status', (req, res) => {
     res.json({
         message: "Sports Betting Analyzer API is Running 🚀",
         status: "active",
@@ -26,8 +37,16 @@ app.get('/', (req, res) => {
             research: "/api/research?query=search_term",
             health: "/health",
         },
-        info: "This is the backend API. Please use the frontend application to view the dashboard."
+        info: "Frontend should be served at root /"
     });
+});
+
+// Handle SPA Routing (Send index.html for non-API routes)
+app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 // Cache context
