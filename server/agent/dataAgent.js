@@ -397,20 +397,39 @@ export async function runDataAgent(oddsApiKey = null) {
                     console.error(`Stats model error ${game.id}:`, e.message);
                 }
 
-                // E. Run AI Agent (API Call)
-                const scrapedData = {
-                    factors: statsAnalysis.factors,
-                    modelProb: statsAnalysis.homeWinProb,
-                    social: socialData,
-                    h2h: h2hData,
-                    schedule: { home: homeSchedule, away: awaySchedule },
-                    rosters: { home: homeRoster, away: awayRoster },
-                    teamStats: { home: homeStats || {}, away: awayStats || {} }
-                };
+                // SMART CACHING: Reuse AI analysis if recent (< 6 hours)
+                let llmResult = null;
+                const existingGame = dataStore.games.get(game.id);
+                // Check if we have valid AI analysis timestamp
+                const CACHE_TTL = 6 * 60 * 60 * 1000; // 6 Hours
 
-                const llmResult = await runAgentAnalysis(
-                    game, scrapedData, game.odds || {}, injuries, news
-                );
+                const hasValidCache = existingGame?.aiAnalysis?.timestamp &&
+                    (Date.now() - new Date(existingGame.aiAnalysis.timestamp).getTime() < CACHE_TTL);
+
+                if (hasValidCache) {
+                    console.log(`[AGENT] ♻ Reusing cached AI analysis for ${game.awayTeam.name} @ ${game.homeTeam.name}`);
+                    llmResult = existingGame.aiAnalysis;
+                } else {
+                    // E. Run AI Agent (API Call) - Only if no cache
+                    console.log(`[AGENT] 🤖 Generative AI analyzing ${game.awayTeam.name} @ ${game.homeTeam.name}...`);
+
+                    const scrapedData = {
+                        factors: statsAnalysis.factors,
+                        modelProb: statsAnalysis.homeWinProb,
+                        social: socialData,
+                        h2h: h2hData,
+                        schedule: { home: homeSchedule, away: awaySchedule },
+                        rosters: { home: homeRoster, away: awayRoster },
+                        teamStats: { home: homeStats || {}, away: awayStats || {} }
+                    };
+
+                    llmResult = await runAgentAnalysis(
+                        game, scrapedData, game.odds || {}, injuries, news
+                    );
+
+                    // Add rate limit delay ONLY if we hit the API
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
 
                 // F. Merge Results
                 let evalResult = null;
@@ -423,8 +442,7 @@ export async function runDataAgent(oddsApiKey = null) {
                     evaluations.push(evalResult);
                 }
 
-                // 2s Delay to avoid Rate Limit
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // (Delay moved inside else block to speed up cached runs)
 
             } catch (err) {
                 console.error(`[AGENT] Error processing game ${game.id}:`, err.message);
