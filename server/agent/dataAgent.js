@@ -94,6 +94,7 @@ async function fetchSchedule(teamId, sport = 'nba') {
             oppScore: e.competitions?.[0]?.competitors?.find(c => c.team?.id !== teamId)?.score?.value
         })) || [];
     } catch (e) {
+        console.warn(`[SCHEDULE] Fetch error for team ${teamId}:`, e.message);
         return [];
     }
 }
@@ -341,7 +342,7 @@ export async function runDataAgent(oddsApiKey = null) {
             ]);
 
             // B. Calculate H2H (Head-to-Head)
-            const h2hGames = homeSchedule.filter(g => g.opponent?.id === awayId);
+            const h2hGames = homeSchedule.filter(g => g.opponent?.id == awayId);
             const homeWins = h2hGames.filter(g => g.result === 'win').length;
             const h2hData = {
                 totalGames: h2hGames.length,

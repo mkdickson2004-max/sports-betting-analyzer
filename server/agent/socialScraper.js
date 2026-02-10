@@ -34,14 +34,18 @@ export async function fetchSocialSentiment(sport, homeTeam, awayTeam) {
         try {
             // Use JSON endpoint for subreddit listing
             // Limit to 25 recent posts
+            // Use generic browser UA to avoid Reddit's bot block
             const url = `https://www.reddit.com/r/${sub}/new.json?limit=25`;
             const response = await fetch(url, {
                 headers: {
-                    'User-Agent': 'SportsBettingAnalyzer/1.0 (Educational Project)'
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                 }
             });
 
-            if (!response.ok) continue;
+            if (!response.ok) {
+                console.warn(`[SOCIAL] Reddit returned ${response.status} for r/${sub}`);
+                continue;
+            }
 
             const data = await response.json();
             const posts = data.data?.children || [];
