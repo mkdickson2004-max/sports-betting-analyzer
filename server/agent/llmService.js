@@ -15,8 +15,8 @@ import fetch from 'node-fetch'; // Use native fetch in Node 18+, fallback to imp
 dotenv.config();
 
 // Configuration
-const OPENAI_KEY = process.env.OPENAI_API_KEY;
-const GEMINI_KEY = process.env.GEMINI_API_KEY;
+const OPENAI_KEY = process.env.OPENAI_API_KEY || process.env.OPENAI_API;
+const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GEMINI_API;
 
 // Default Models
 const OPENAI_MODEL = 'gpt-4o-mini';
