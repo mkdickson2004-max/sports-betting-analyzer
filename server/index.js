@@ -54,49 +54,16 @@ app.get('/api/data', async (req, res) => {
         // Step 3: Fetch team stats
         const teamStats = await fetchTeamStats(sport);
 
-        // Step 4: Scrape advanced data for all teams in today's games
-        console.log('[SERVER] Scraping comprehensive data for all games...');
+        // Step 4: Scrape advanced data for all teams in today's games (DISABLED FOR STABILITY)
+        console.log('[SERVER] Scraping comprehensive data (SKIPPING to ensure fast response)...');
         const enhancedData = {};
 
-        // Scrape data for each game
-        for (const game of games.slice(0, 10)) { // Limit to prevent timeout
-            const homeAbbr = game.homeTeam?.abbr;
-            const awayAbbr = game.awayTeam?.abbr;
-
-            if (homeAbbr && awayAbbr) {
-                try {
-                    // Check scraped data cache
-                    const cacheKey = `${homeAbbr}_${awayAbbr}`;
-                    if (!scrapedDataCache[sport].data) {
-                        scrapedDataCache[sport].data = {};
-                    }
-
-                    if (scrapedDataCache[sport].data[cacheKey] &&
-                        now - scrapedDataCache[sport].lastUpdated < SCRAPED_CACHE_DURATION) {
-                        enhancedData[game.id] = scrapedDataCache[sport].data[cacheKey];
-                    } else {
-                        const matchingOdds = odds.find(o =>
-                            o.home_team?.includes(homeAbbr) ||
-                            o.away_team?.includes(awayAbbr)
-                        );
-
-                        const gameScrapedData = await scrapeAllGameData(
-                            game,
-                            matchingOdds,
-                            injuries[homeAbbr],
-                            news
-                        );
-
-                        if (gameScrapedData) {
-                            enhancedData[game.id] = gameScrapedData;
-                            scrapedDataCache[sport].data[cacheKey] = gameScrapedData;
-                        }
-                    }
-                } catch (e) {
-                    console.error(`[SERVER] Error scraping data for ${homeAbbr} vs ${awayAbbr}:`, e.message);
-                }
-            }
+        /* 
+        // TEMPORARILY DISABLED: Heavy scraping causes timeouts on free tier hosting
+        for (const game of games.slice(0, 10)) { 
+            // ... (keep commented out code)
         }
+        */
 
         scrapedDataCache[sport].lastUpdated = now;
 
