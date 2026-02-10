@@ -258,7 +258,19 @@
     margin: 0;
     font-size: 1rem;
     line-height: 1.6;
-    color: var(--text-primary);
+    color: var(--text-secondary);
+}
+
+.reasoning-summary {
+    font-size: 1.1rem !important;
+    font-weight: 400;
+    line-height: 1.7 !important;
+    color: var(--text-primary) !important;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.03), transparent);
+    padding: var(--space-md);
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--accent-blue);
+    margin-bottom: var(--space-lg) !important;
 }
 
 .insights-grid {
