@@ -8,17 +8,15 @@ import { scrapeAllGameData, scrapeAdvancedStats, scrapeTeamSchedule, calculateRe
 import { runAgentAnalysis, getAgentStatus } from './agent/aiAgent.js';
 import { isLLMConfigured } from './agent/llmService.js';
 
+import deepAnalyzer from './agent/deepAnalyzer.js';
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
 
-// In-memory cache to prevent excessive scraping
-let cache = {
-    nba: { data: null, lastUpdated: 0 },
-    nfl: { data: null, lastUpdated: 0 }
-};
+// ... (keep existing cache variables) ...
 
 // Cache for scraped data (longer duration)
 let scrapedDataCache = {
@@ -102,12 +100,45 @@ app.get('/api/data', async (req, res) => {
 
         scrapedDataCache[sport].lastUpdated = now;
 
-        // Step 5: Run AI Agent analysis (if LLM configured)
+        // Step 5: Run AI Analysis (Deep Analyzer)
+        console.log('[SERVER] Running Deep Analysis for all games...');
         const aiAnalysis = {};
-        if (isLLMConfigured()) {
-            console.log('[SERVER] ℹ AI Agent ready for on-demand analysis (skipping auto-start to save quota)');
-        } else {
-            console.log('[SERVER] ℹ No GEMINI_API_KEY set. AI agent running in rule-based mode.');
+
+        for (const game of games) {
+            try {
+                // Prepare inputs
+                const gameOdds = odds.find(o =>
+                    o.home_team?.includes(game.homeTeam?.abbr) ||
+                    o.away_team?.includes(game.awayTeam?.abbr)
+                ) || {};
+
+                // Use robust team stats
+                const gameTeamStats = {
+                    home: teamStats[game.homeTeam?.abbr] || {},
+                    away: teamStats[game.awayTeam?.abbr] || {}
+                };
+
+                // Run analysis (using our robust deepAnalyzer)
+                const analysis = await deepAnalyzer.generateDeepAnalysis(
+                    game,
+                    gameOdds,
+                    injuries || {},
+                    news || [],
+                    gameTeamStats,
+                    enhancedData[game.id] // Pass scraped data if available
+                );
+
+                aiAnalysis[game.id] = analysis;
+                // Attach to game object as well for safety
+                game.aiAnalysis = analysis;
+
+            } catch (error) {
+                console.error(`[SERVER] Analysis failed for game ${game.id}:`, error.message);
+                aiAnalysis[game.id] = {
+                    error: true,
+                    reasons: [{ label: 'Error', reason: 'Analysis unavailable' }]
+                };
+            }
         }
 
         // Step 6: Construct response object
