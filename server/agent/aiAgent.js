@@ -73,7 +73,8 @@ export async function runAgentAnalysis(game, scrapedData, odds, injuries, news) 
                 scrapedData?.factors || [],
                 odds,
                 injuries,
-                scrapedData?.social || null // Pass Social Data
+                scrapedData?.social || null,
+                scrapedData?.monteCarlo || null // New: Monte Carlo Data
             );
             if (llmAnalysis) {
                 result.analysis = llmAnalysis;

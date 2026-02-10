@@ -173,24 +173,26 @@ export async function generateJSON(prompt, schemaDescription) {
  */
 export const analyzeBettingFactors = (g, o, n) => generateLLMAnalysis(g, [], o, [], null);
 
-export async function generateLLMAnalysis(game, factors, odds, injuries, socialData = null) {
+export async function generateLLMAnalysis(game, factors, odds, injuries, socialData = null, monteCarloData = null) {
     const prompt = `
     Analyze this game: ${game.awayTeam} @ ${game.homeTeam}
     Date: ${game.date || 'Today'}
     
     Odds: ${JSON.stringify(odds).substring(0, 1000)}
     Factors: ${JSON.stringify(factors).substring(0, 2000)}
-    Social Sentiment: ${JSON.stringify(socialData || {}).substring(0, 1000)}
+    Social Sentiment: ${JSON.stringify(socialData || {}).substring(0, 500)}
+    Monte Carlo (Totals Model): ${JSON.stringify(monteCarloData || "No simulation")}
     
-    Goal: Identify betting edge.
+    Goal: Identify betting edge. Use Monte Carlo specifically for Over/Under totals.
     Output JSON (No Markdown):
     {
-      "narrative": "Analysis summary including social sentiment...",
+      "narrative": "Analysis summary including social sentiment and Monte Carlo projection for total...",
       "confidenceRating": 85,
       "keyInsights": ["Point 1", "Point 2"],
       "prediction": { "winner": "Team", "spreadCover": "Team", "total": "Over/Under" },
       "enhancedFactors": { 
-         "Social": { "advantage": "Home/Away/None", "insight": "Brief insight" }
+         "Social": { "advantage": "Home/Away/None", "insight": "Brief insight" },
+         "MonteCarlo": { "projectedTotal": 220, "edge": "Over/Under/None" }
       }
     }
     `;

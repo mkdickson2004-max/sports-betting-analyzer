@@ -7,6 +7,7 @@
 import { runAgentAnalysis } from './aiAgent.js';
 import { analyzeAllAdvancedFactors } from './advancedFactors.js';
 import { fetchSocialSentiment } from './socialScraper.js';
+import { runMonteCarloSimulation } from '../utils/monteCarlo.js';
 // Data source endpoints
 
 // Data source endpoints
@@ -413,9 +414,20 @@ export async function runDataAgent(oddsApiKey = null) {
                     // E. Run AI Agent (API Call) - Only if no cache
                     console.log(`[AGENT] 🤖 Generative AI analyzing ${game.awayTeam.name} @ ${game.homeTeam.name}...`);
 
+                    // MONTE CARLO (Over/Under Specialization)
+                    let mcSim = null;
+                    try {
+                        mcSim = runMonteCarloSimulation(
+                            homeStats || { avgPoints: 110, pace: 98 },
+                            awayStats || { avgPoints: 110, pace: 98 }
+                        );
+                        console.log(`[AGENT] 🎲 Monte Carlo: ${mcSim.awayScore}-${mcSim.homeScore} (Total: ${mcSim.totalScore})`);
+                    } catch (e) { console.error("MC Error", e); }
+
                     const scrapedData = {
                         factors: statsAnalysis.factors,
                         modelProb: statsAnalysis.homeWinProb,
+                        monteCarlo: mcSim,
                         social: socialData,
                         h2h: h2hData,
                         schedule: { home: homeSchedule, away: awaySchedule },
