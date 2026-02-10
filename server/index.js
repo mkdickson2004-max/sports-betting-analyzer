@@ -16,6 +16,11 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
+// Redirect root to frontend
+app.get('/', (req, res) => {
+    res.redirect('https://sports-betting-analyzer-42le.vercel.app/');
+});
+
 // Main API cache
 const cache = {};
 
