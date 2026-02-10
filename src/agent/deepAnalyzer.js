@@ -455,9 +455,16 @@ function analyzeTeamStrength(game) {
     const homePointDiff = (homeWinPct - 0.5) * 10;
     const awayPointDiff = (awayWinPct - 0.5) * 10;
 
+    // Bench Unit Impact
+    const homeAbbr = game.homeTeam?.abbr || 'UNK';
+    const awayAbbr = game.awayTeam?.abbr || 'UNK';
+    const homeBench = BENCH_UNIT_RATINGS[homeAbbr] || 0;
+    const awayBench = BENCH_UNIT_RATINGS[awayAbbr] || 0;
+
     // Calculate strength rating (0-100)
-    const homeStrength = Math.round(homeWinPct * 100);
-    const awayStrength = Math.round(awayWinPct * 100);
+    // Weighted: 80% Starters (WinPct), 20% Bench Depth
+    let homeStrength = Math.round(homeWinPct * 100) + (homeBench * 2);
+    let awayStrength = Math.round(awayWinPct * 100) + (awayBench * 2);
 
     return {
         home: {
@@ -465,6 +472,7 @@ function analyzeTeamStrength(game) {
             winPct: Math.round(homeWinPct * 100),
             pointDiff: Math.round(homePointDiff * 10) / 10,
             strength: homeStrength,
+            benchRating: homeBench,
             tier: getTier(homeWinPct)
         },
         away: {
@@ -472,6 +480,7 @@ function analyzeTeamStrength(game) {
             winPct: Math.round(awayWinPct * 100),
             pointDiff: Math.round(awayPointDiff * 10) / 10,
             strength: awayStrength,
+            benchRating: awayBench,
             tier: getTier(awayWinPct)
         },
         differential: homeStrength - awayStrength,
@@ -1092,6 +1101,15 @@ const STAR_PLAYER_IMPACT = {
     'Jimmy Butler': 4.0, 'Jalen Brunson': 4.5, 'Trae Young': 4.0, 'Damian Lillard': 4.0,
     'De Aaron Fox': 3.5, 'Domantas Sabonis': 3.5, 'Bam Adebayo': 3.5, 'Paul George': 3.5,
     'Kyrie Irving': 3.5, 'Zion Williamson': 3.5, 'Victor Wembanyama': 4.0, 'LaMelo Ball': 3.5
+};
+
+// --- NEW: Bench Unit Ratings (Net Rating relative to avg) ---
+const BENCH_UNIT_RATINGS = {
+    'IND': 5.5, 'GSW': 4.5, 'ORL': 4.0, 'NOP': 3.5, 'OKC': 3.0, 'UTA': 2.5,
+    'SAC': 2.0, 'BKN': 2.0, 'TOR': 1.5, 'HOU': 1.5, 'NYK': 1.0, 'LAC': 1.0,
+    'MIN': 0.5, 'CLE': 0.5, 'DAL': 0.0, 'MIA': 0.0, 'MEM': -0.5, 'BOS': -0.5,
+    'ATL': -1.0, 'CHI': -1.5, 'DEN': -2.0, 'SAS': -2.0, 'DET': -2.5, 'WAS': -2.5,
+    'POR': -3.0, 'MIL': -3.5, 'LAL': -4.0, 'PHI': -4.0, 'PHX': -4.5, 'CHA': -5.0
 };
 
 /**
