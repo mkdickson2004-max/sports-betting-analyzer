@@ -17,15 +17,33 @@ const API_URL = 'https://api.openai.com/v1/chat/completions';
 // Rate limiting state
 let requestCount = 0;
 let lastResetTime = Date.now();
-const RPM_LIMIT = 500; // High limit for paid OpenAI tier
+const RPM_LIMIT = 500; // Limit for OpenAI
+
+/**
+ * Check if OpenAI API key is configured
+ */
+export function isLLMConfigured() {
+    return API_KEY && API_KEY.length > 10;
+}
+
+/**
+ * Get LLM Status
+ */
+export function getLLMStatus() {
+    return {
+        configured: isLLMConfigured(),
+        model: OPENAI_MODEL,
+        provider: 'OpenAI'
+    };
+}
 
 /**
  * Main function to generate text from a prompt
  */
 export async function generateText(prompt, systemInstruction = "You are a helpful sports betting analyst.") {
-    if (!API_KEY || API_KEY.length < 10) {
-        console.warn('[LLM] ⚠️ No API Key provided. Returning mock response.');
-        return "AI Analysis Unavailable - Please configure OpenAI API Key.";
+    if (!isLLMConfigured()) {
+        console.warn('[LLM] ⚠ No API Key. Skipping AI generation.');
+        return null;
     }
 
     try {
@@ -58,16 +76,15 @@ export async function generateText(prompt, systemInstruction = "You are a helpfu
 
     } catch (error) {
         console.error('[LLM] Generation error:', error.message);
-        return `Error generating analysis: ${error.message}`;
+        return null;
     }
 }
 
 /**
  * Generate structured JSON from a prompt
- * forces valid JSON output
  */
 export async function generateJSON(prompt, schemaDescription = "valid JSON object") {
-    if (!API_KEY) return null;
+    if (!isLLMConfigured()) return null;
 
     const systemPrompt = `You are a data processing assistant. You must output ONLY valid JSON matching this description: ${schemaDescription}. Do not include markdown formatting like \`\`\`json. Just the raw JSON object.`;
 
@@ -75,9 +92,7 @@ export async function generateJSON(prompt, schemaDescription = "valid JSON objec
         const text = await generateText(prompt, systemPrompt);
         if (!text) return null;
 
-        // Clean markdown if present
         const jsonStr = text.replace(/```json\n?|\n?```/g, '').trim();
-
         return JSON.parse(jsonStr);
     } catch (error) {
         console.error('[LLM] JSON generation error:', error.message);
@@ -86,42 +101,99 @@ export async function generateJSON(prompt, schemaDescription = "valid JSON objec
 }
 
 /**
- * Advanced Analysis for Betting
+ * Advanced Analysis for Betting (Legacy alias)
  */
 export async function analyzeBettingFactors(gameData, oddsData, newsData) {
-    const prompt = `
-    Analyze this game for betting value:
-    
-    Game: ${gameData.homeTeam} vs ${gameData.awayTeam}
-    Date: ${gameData.date}
-    Odds: ${JSON.stringify(oddsData)}
-    News: ${JSON.stringify(newsData).slice(0, 1000)}
-    Stats: ${JSON.stringify(gameData.stats || {})}
-
-    Identify the best bet (spread, moneyline, or total) and provide 3 key reasons why.
-    Output JSON format:
-    {
-      "recommendation": "Team -5.5",
-      "confidence": 85,
-      "reasoning": ["Reason 1", "Reason 2", "Reason 3"],
-      "riskLevel": "Medium"
-    }
-    `;
-
-    return await generateJSON(prompt, "Betting recommendation object");
+    return generateLLMAnalysis(gameData, [], oddsData, []);
 }
 
 /**
- * Analyze sentiment of text for sports news
+ * Generate deep analysis for a game
  */
-export async function analyzeSentiment(text) {
+export async function generateLLMAnalysis(game, factors, odds, injuries) {
     const prompt = `
-    Analyze the sentiment of this sports news text for betting implications:
-    "${text.substring(0, 500)}"
+    Analyze this game deeply: ${game.awayTeam} @ ${game.homeTeam}
+    Date: ${game.date}
     
-    Output JSON with sentiment score (0-100) and label.
+    Odds: ${JSON.stringify(odds)}
+    Factors: ${JSON.stringify(factors)}
+    Injuries: ${JSON.stringify(injuries)}
+
+    Output JSON logic:
+    {
+      "narrative": "Detailed narrative about the matchup...",
+      "confidenceRating": 85 (0-100),
+      "keyInsights": ["Insight 1", "Insight 2"],
+      "prediction": { "winner": "Team", "spreadCover": "Team", "total": "Over/Under" }
+    }
     `;
-    return await generateJSON(prompt, "{ score: number, label: string }");
+    return await generateJSON(prompt, "Deep analysis object");
+}
+
+/**
+ * Situational Analysis
+ */
+export async function analyzeSituation(game, schedule, factors) {
+    const prompt = `
+    Analyze situational spots for ${game.awayTeam} @ ${game.homeTeam}.
+    Schedule context: ${JSON.stringify(schedule)}
+    
+    Look for: Rest disadvantage, Lookahead spots, Sandwich games, Travel fatigue.
+    
+    Output JSON:
+    {
+      "situationLevel": "High/Medium/Low",
+      "description": "Why this is a situational spot...",
+      "advantage": "Home/Away/None"
+    }
+    `;
+    return await generateJSON(prompt, "Situational analysis object");
+}
+
+/**
+ * Sentiment Analysis
+ */
+export async function analyzeSentiment(news, homeTeam, awayTeam) {
+    // If news is string, handle it. If array, stringify.
+    const newsText = Array.isArray(news) ? JSON.stringify(news) : news;
+
+    const prompt = `
+    Analyze sentiment for ${homeTeam} vs ${awayTeam} based on this news:
+    "${newsText?.substring(0, 1000)}"
+    
+    Output JSON:
+    {
+      "homeSentiment": 0-100,
+      "awaySentiment": 0-100,
+      "summary": "Brief summary of mood"
+    }
+    `;
+    return await generateJSON(prompt, "Sentiment object");
+}
+
+/**
+ * Smart Data Extraction
+ */
+export async function smartExtractData(rawHtml, dataType, context) {
+    const prompt = `
+    Extract "${dataType}" from this HTML snippet:
+    ${rawHtml.substring(0, 2000)}
+    Context: ${JSON.stringify(context)}
+    
+    Output valid JSON of the extracted data.
+    `;
+    return await generateJSON(prompt, "Extracted data object");
+}
+
+/**
+ * Plan Scraping
+ */
+export async function planScraping(game, existingData) {
+    return {
+        dataPriorities: [],
+        missingCritical: [],
+        dataQualityScore: 8
+    };
 }
 
 async function checkRateLimit() {
@@ -138,13 +210,18 @@ async function checkRateLimit() {
         requestCount = 0;
         lastResetTime = Date.now();
     }
-
     requestCount++;
 }
 
 export default {
+    isLLMConfigured,
+    getLLMStatus,
     generateText,
     generateJSON,
     analyzeBettingFactors,
-    analyzeSentiment
+    generateLLMAnalysis,
+    analyzeSituation,
+    analyzeSentiment,
+    smartExtractData,
+    planScraping
 };
