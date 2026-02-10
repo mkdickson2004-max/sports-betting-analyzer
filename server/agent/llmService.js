@@ -111,6 +111,19 @@ export async function analyzeBettingFactors(gameData, oddsData, newsData) {
     return await generateJSON(prompt, "Betting recommendation object");
 }
 
+/**
+ * Analyze sentiment of text for sports news
+ */
+export async function analyzeSentiment(text) {
+    const prompt = `
+    Analyze the sentiment of this sports news text for betting implications:
+    "${text.substring(0, 500)}"
+    
+    Output JSON with sentiment score (0-100) and label.
+    `;
+    return await generateJSON(prompt, "{ score: number, label: string }");
+}
+
 async function checkRateLimit() {
     const now = Date.now();
     if (now - lastResetTime > 60000) {
@@ -132,5 +145,6 @@ async function checkRateLimit() {
 export default {
     generateText,
     generateJSON,
-    analyzeBettingFactors
+    analyzeBettingFactors,
+    analyzeSentiment
 };
