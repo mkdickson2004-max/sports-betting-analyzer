@@ -50,14 +50,7 @@ function App() {
                 <span className="tab-badge">{data.games.length}</span>
               )}
             </button>
-            <button
-              className={`view-tab ${activeView === 'superbowl' ? 'active' : ''}`}
-              onClick={() => setActiveView('superbowl')}
-            >
-              <span className="tab-icon">🏆</span>
-              Super Bowl LX
-              <span className="tab-badge highlight">LIVE</span>
-            </button>
+
             <button
               className={`view-tab ${activeView === 'value' ? 'active' : ''}`}
               onClick={() => setActiveView('value')}

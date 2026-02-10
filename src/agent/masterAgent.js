@@ -10,6 +10,7 @@
 import dataAgent from './dataAgent.js';
 import eloEngine from './eloEngine.js';
 import newsAnalyzer from './newsAnalyzer.js';
+import deepAnalyzer from './deepAnalyzer.js';
 
 // Configuration - NO API KEYS NEEDED
 const CONFIG = {
@@ -215,7 +216,58 @@ async function runCycle() {
         agentState.data.valueBets = calculateValueBets();
         agentState.stats.valueBetsFound = agentState.data.valueBets.length;
 
-        // 6. Get ELO rankings
+        // 6. Running Deep Analysis on all games
+        console.log('[MASTER AGENT] Step 6: Running Deep Analysis on all games...');
+
+        // We process games sequentially to avoid overwhelming the scraper
+        for (const game of agentState.data.games) {
+            try {
+                // Find matching odds
+                const gameOdds = agentState.data.odds?.find(o =>
+                    o.homeTeam === game.homeTeam.name ||
+                    o.home_team === game.homeTeam.name ||
+                    o.homeTeam === game.homeTeam.abbr
+                );
+
+                // Find relevant news
+                const relevantNews = agentState.data.news?.filter(n => {
+                    const txt = `${n.headline} ${n.description}`.toLowerCase();
+                    return txt.includes(game.homeTeam.name.toLowerCase()) ||
+                        txt.includes(game.awayTeam.name.toLowerCase()) ||
+                        txt.includes(game.homeTeam.abbr.toLowerCase());
+                }) || [];
+
+                // Format team stats for analyzer
+                // deepAnalyzer expects { home: stats, away: stats }
+                const teamStats = {
+                    home: Object.values(agentState.data.teamStats || {}).find(t => t.abbr === game.homeTeam.abbr)?.stats || {},
+                    away: Object.values(agentState.data.teamStats || {}).find(t => t.abbr === game.awayTeam.abbr)?.stats || {}
+                };
+
+                // Run analysis
+                console.log(`[MASTER AGENT] Analyzing ${game.awayTeam.abbr} @ ${game.homeTeam.abbr}...`);
+                const analysis = await deepAnalyzer.generateDeepAnalysis(
+                    game,
+                    gameOdds || {},
+                    agentState.data.injuries || {},
+                    relevantNews,
+                    teamStats
+                );
+
+                game.aiAnalysis = analysis;
+
+            } catch (error) {
+                console.error(`[MASTER AGENT] Analysis failed for game ${game.id}:`, error.message);
+                // Fallback to basic analysis if deep analysis fails
+                game.aiAnalysis = {
+                    favoredTeam: 'home',
+                    confidence: 50,
+                    reasons: [{ label: 'Error', reason: 'Analysis unavailable: ' + error.message }]
+                };
+            }
+        }
+
+        // 7. Get ELO rankings
         agentState.data.eloRankings = eloEngine.getEloRankings();
 
         // Update state
