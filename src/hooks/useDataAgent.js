@@ -209,10 +209,11 @@ export function useDataAgent(initialSport = 'nba') {
             const aiAnalysis = serverData.aiAnalysis || {};
 
             // Attach scraped data and AI analysis to each game
+            // Check both the separate map AND the game object itself
             const games = gamesRaw.map(game => ({
                 ...game,
-                scrapedData: scrapedData[game.id] || null,
-                aiAnalysis: aiAnalysis[game.id] || null
+                scrapedData: scrapedData[game.id] || game.scrapedData || null,
+                aiAnalysis: aiAnalysis[game.id] || game.aiAnalysis || null
             }));
 
             const odds = serverData.odds ? Object.values(serverData.odds) : [];
