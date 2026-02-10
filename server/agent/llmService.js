@@ -8,9 +8,6 @@
  */
 
 import dotenv from 'dotenv';
-import fetch from 'node-fetch'; // Use native fetch in Node 18+, fallback to import if needed. But in module mode native fetch is global.
-// Actually, remove import fetch if Node 18. But for safety lets check environment.
-// We'll use globalThis.fetch just to be safe.
 
 dotenv.config();
 
