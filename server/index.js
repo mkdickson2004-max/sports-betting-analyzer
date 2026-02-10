@@ -55,15 +55,58 @@ app.get('/api/data', async (req, res) => {
         const teamStats = await fetchTeamStats(sport);
 
         // Step 4: Scrape advanced data for all teams in today's games (DISABLED FOR STABILITY)
-        console.log('[SERVER] Scraping comprehensive data (SKIPPING to ensure fast response)...');
+        // Step 4: Scrape advanced data (ENABLED - Optimized for Starter Plan)
+        console.log('[SERVER] Scraping comprehensive data for top games...');
+
+        // Helper for specialized scraping with timeout
+        const scrapeGameWithTimeout = async (game) => {
+            const homeAbbr = game.homeTeam?.abbr;
+            const awayAbbr = game.awayTeam?.abbr;
+            if (!homeAbbr || !awayAbbr) return null;
+
+            try {
+                // Check cache
+                const cacheKey = `${homeAbbr}_${awayAbbr}`;
+                if (!scrapedDataCache[sport].data) scrapedDataCache[sport].data = {};
+
+                if (scrapedDataCache[sport].data[cacheKey] &&
+                    now - scrapedDataCache[sport].lastUpdated < SCRAPED_CACHE_DURATION) {
+                    return { id: game.id, data: scrapedDataCache[sport].data[cacheKey] };
+                }
+
+                const matchingOdds = odds.find(o =>
+                    o.home_team?.includes(homeAbbr) || o.away_team?.includes(awayAbbr)
+                );
+
+                // Race scraping against 8s timeout
+                const scrapePromise = scrapeAllGameData(game, matchingOdds, injuries[homeAbbr], news);
+                const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 8000));
+
+                const data = await Promise.race([scrapePromise, timeoutPromise]);
+
+                if (data) {
+                    scrapedDataCache[sport].data[cacheKey] = data;
+                    return { id: game.id, data };
+                }
+            } catch (e) {
+                console.error(`[SERVER] Scrape error ${homeAbbr}vs${awayAbbr}:`, e.message);
+            }
+            return null;
+        };
+
+        // Process top 12 games in batches of 4 to manage CPU/Network
+        const gamesToScrape = games.slice(0, 12);
+        const batchSize = 4;
         const enhancedData = {};
 
-        /* 
-        // TEMPORARILY DISABLED: Heavy scraping causes timeouts on free tier hosting
-        for (const game of games.slice(0, 10)) { 
-            // ... (keep commented out code)
+        for (let i = 0; i < gamesToScrape.length; i += batchSize) {
+            const batch = gamesToScrape.slice(i, i + batchSize);
+            const results = await Promise.all(batch.map(game => scrapeGameWithTimeout(game)));
+
+            results.forEach(result => {
+                if (result) enhancedData[result.id] = result.data;
+            });
         }
-        */
 
         scrapedDataCache[sport].lastUpdated = now;
 
