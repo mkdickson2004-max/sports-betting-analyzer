@@ -17,7 +17,7 @@ const GEMINI_KEY = process.env.GEMINI_API_KEY || process.env.GEMINI_API;
 
 // Default Models
 const OPENAI_MODEL = 'gpt-4o-mini';
-const GEMINI_MODEL = 'gemini-2.0-flash'; // 'gemini-1.5-flash' is also good
+const GEMINI_MODEL = 'gemini-1.5-flash'; // More stable free tier
 
 // Rate limiting
 let lastRequestTime = 0;

@@ -325,88 +325,111 @@ export async function runDataAgent(oddsApiKey = null) {
         // ---------------------------------------------------------
         console.log(`[AGENT] 🧠 Running AI Analysis on ${games.length} games...`);
 
-        // 1. Unified Data Fetch & Analysis Loop
-        const analysisPromises = games.map(async (game) => {
-            const homeId = game.homeTeam?.id;
-            const awayId = game.awayTeam?.id;
+        // 1. Unified Data Fetch & Analysis Loop (Sequential)
+        const evaluations = [];
 
-            // A. Fetch Roster & Schedule (Parallel)
-            const [
-                homeRoster, awayRoster,
-                homeSchedule, awaySchedule
-            ] = await Promise.all([
-                fetchRoster(homeId),
-                fetchRoster(awayId),
-                fetchSchedule(homeId),
-                fetchSchedule(awayId)
-            ]);
+        console.log(`[AGENT] Processing ${games.length} games sequentially to respect AI Rate Limits...`);
 
-            // B. Calculate H2H (Head-to-Head)
-            const h2hGames = homeSchedule.filter(g => g.opponent?.id == awayId);
-            const homeWins = h2hGames.filter(g => g.result === 'win').length;
-            const h2hData = {
-                totalGames: h2hGames.length,
-                homeWins: homeWins,
-                awayWins: h2hGames.length - homeWins,
-                lastGame: h2hGames[0] || null
-            };
-
-            // C. Fetch Social Sentiment
-            let socialData = { hypeLevel: 'Low', posts: [] };
+        for (const game of games) {
             try {
-                socialData = await fetchSocialSentiment('nba', game.homeTeam, game.awayTeam);
-            } catch (e) { }
+                const homeId = game.homeTeam?.id;
+                const awayId = game.awayTeam?.id;
 
-            // D. Run Statistical Model
-            const homeStats = dataStore.teamStats.get(game.homeTeam?.abbr);
-            const awayStats = dataStore.teamStats.get(game.awayTeam?.abbr);
+                // A. Fetch Roster & Schedule (Parallel per game)
+                // Note: Social scraping is also parallelized here if needed, but we do it sequentially.
+                const [
+                    homeRoster, awayRoster,
+                    homeSchedule, awaySchedule
+                ] = await Promise.all([
+                    fetchRoster(homeId),
+                    fetchRoster(awayId),
+                    fetchSchedule(homeId),
+                    fetchSchedule(awayId)
+                ]);
 
-            let statsAnalysis = { factors: {}, homeWinProb: 0.5 };
-            try {
-                statsAnalysis = await analyzeAllAdvancedFactors(
-                    game,
-                    game.odds || {},
-                    injuries,
-                    { home: homeStats, away: awayStats },
-                    {
-                        social: socialData,
-                        h2h: h2hData,
-                        schedule: { home: homeSchedule, away: awaySchedule },
-                        rosters: { home: homeRoster, away: awayRoster },
-                        refs: game.officials
-                    },
-                    news
+                // B. Calculate H2H (Head-to-Head)
+                // Use loose equality for ID matching
+                const h2hGames = homeSchedule.filter(g => g.opponent?.id == awayId);
+                const homeWins = h2hGames.filter(g => g.result === 'win').length;
+                const h2hData = {
+                    totalGames: h2hGames.length,
+                    homeWins: homeWins,
+                    awayWins: h2hGames.length - homeWins,
+                    lastGame: h2hGames[0] || null
+                };
+
+                // C. Fetch Social Sentiment
+                let socialData = { hypeLevel: 'Low', posts: [] };
+                try {
+                    // Use standard function (imported above). Assuming 'nba' for now, or infer from game.sport?
+                    // The function signature: fetchSocialSentiment(league, homeTeam, awayTeam)
+                    // The 'game' object has 'sport' property if fetched from unified fetcher? 
+                    // Let's assume 'nba' is safe default or use game.sport (if available).
+                    // Actually fetchESPNScoreboard adds sport? No.
+                    // But we can check leagues.
+                    const league = game.league || 'nba'; // Fallback
+                    socialData = await fetchSocialSentiment(league, game.homeTeam, game.awayTeam);
+                } catch (e) {
+                    // console.warn('Social fetch failed', e.message);
+                }
+
+                // D. Run Statistical Model
+                const homeStats = dataStore.teamStats.get(game.homeTeam?.abbr);
+                const awayStats = dataStore.teamStats.get(game.awayTeam?.abbr);
+
+                let statsAnalysis = { factors: {}, homeWinProb: 0.5 };
+                try {
+                    statsAnalysis = await analyzeAllAdvancedFactors(
+                        game,
+                        game.odds || {},
+                        injuries,
+                        { home: homeStats, away: awayStats },
+                        {
+                            social: socialData,
+                            h2h: h2hData,
+                            schedule: { home: homeSchedule, away: awaySchedule },
+                            rosters: { home: homeRoster, away: awayRoster },
+                            refs: game.officials
+                        },
+                        news
+                    );
+                } catch (e) {
+                    console.error(`Stats model error ${game.id}:`, e.message);
+                }
+
+                // E. Run AI Agent (API Call)
+                const scrapedData = {
+                    factors: statsAnalysis.factors,
+                    modelProb: statsAnalysis.homeWinProb,
+                    social: socialData,
+                    h2h: h2hData,
+                    schedule: { home: homeSchedule, away: awaySchedule },
+                    rosters: { home: homeRoster, away: awayRoster },
+                    teamStats: { home: homeStats || {}, away: awayStats || {} }
+                };
+
+                const llmResult = await runAgentAnalysis(
+                    game, scrapedData, game.odds || {}, injuries, news
                 );
-            } catch (e) {
-                console.error(`Stats model error ${game.id}:`, e.message);
+
+                // F. Merge Results
+                let evalResult = null;
+                if (llmResult) {
+                    // Add enhanced factors back to result
+                    llmResult.enhancedFactors = statsAnalysis.factors;
+                    if (!llmResult.modelProbability) llmResult.modelProbability = statsAnalysis.homeWinProb;
+
+                    evalResult = { gameId: game.id, ...llmResult };
+                    evaluations.push(evalResult);
+                }
+
+                // 2s Delay to avoid Rate Limit
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+            } catch (err) {
+                console.error(`[AGENT] Error processing game ${game.id}:`, err.message);
             }
-
-            // E. Run AI Agent (GPT-4o)
-            const scrapedData = {
-                factors: statsAnalysis.factors,
-                modelProb: statsAnalysis.homeWinProb,
-                social: socialData,
-                h2h: h2hData,
-                schedule: { home: homeSchedule, away: awaySchedule },
-                rosters: { home: homeRoster, away: awayRoster },
-                teamStats: { home: homeStats || {}, away: awayStats || {} }
-            };
-
-            // Pass scrapedData to AI (which includes social, h2h, etc via scrapedData argument)
-            // Note: runAgentAnalysis calls generateLLMAnalysis
-            const llmResult = await runAgentAnalysis(
-                game, scrapedData, game.odds || {}, injuries, news
-            );
-
-            // F. Merge & Return
-            if (llmResult) {
-                llmResult.enhancedFactors = statsAnalysis.factors;
-                if (!llmResult.modelProbability) llmResult.modelProbability = statsAnalysis.homeWinProb;
-            }
-            return { gameId: game.id, ...llmResult };
-        });
-
-        const evaluations = await Promise.all(analysisPromises);
+        }
 
         // 3. Merge AI results into DataStore
         evaluations.forEach(evalResult => {
