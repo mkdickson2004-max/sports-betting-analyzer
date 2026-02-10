@@ -429,9 +429,9 @@ export async function scrapeAllOdds(sport = 'nba') {
         }
     });
 
-    // Step 4: Generate simulated multi-book odds for comparison
-    // This fills in any gaps and provides realistic market variance
-    const gamesWithAllOdds = generateMultiBookOdds(games);
+    // Step 4: DISABLED - Do not generate synthetic odds. Use real data only.
+    // const gamesWithAllOdds = generateMultiBookOdds(games);
+    const gamesWithAllOdds = games; // Pass real games directly
 
     // Get list of all books
     const allBooks = new Set();
@@ -454,7 +454,7 @@ export async function scrapeAllOdds(sport = 'nba') {
 
     return {
         data: formattedOdds,
-        source: 'multi-book',
+        source: 'real-book', // changed from multi-book
         booksIncluded: booksArray
     };
 }
