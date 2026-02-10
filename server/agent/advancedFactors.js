@@ -485,13 +485,48 @@ function generateScheduleInsight(home, away, homeTeam, awayTeam) {
 // FACTOR 7: REFEREE TENDENCIES
 // Only included if referee assignments are available
 // ============================================
-export function analyzeReferees(gameId) {
-    return createUnavailableFactor(
-        'Referee Tendencies',
-        '👨‍⚖️',
-        0.05,
-        'Official NBA Refs'
-    );
+export function analyzeReferees(gameId, officials = []) {
+    if (!officials || officials.length === 0) {
+        return createUnavailableFactor(
+            'Referee Tendencies',
+            '👨‍⚖️',
+            0.05,
+            'Official NBA Refs'
+        );
+    }
+
+    // Basic heuristic for common refs (Real app would have a database)
+    // Examples of known "trend" refs
+    const homeFriendlyRefs = ['Scott Foster', 'Tony Brothers'];
+    const underRefs = ['Zach Zarba', 'Courtney Kirkland'];
+
+    let score = 50;
+    let insight = `Crew: ${officials.slice(0, 2).join(', ')}.`;
+    let advantage = 'neutral';
+
+    const hasHomeRef = officials.some(r => homeFriendlyRefs.includes(r));
+    const hasUnderRef = officials.some(r => underRefs.includes(r));
+
+    if (hasHomeRef) {
+        score += 8;
+        advantage = 'home';
+        insight += ' Known home-team tendency.';
+    }
+
+    if (hasUnderRef) {
+        insight += ' Defensive-minded crew (Under lean).';
+    }
+
+    return {
+        factor: 'Referee Tendencies',
+        icon: '👨‍⚖️',
+        weight: 0.05,
+        dataAvailable: true,
+        advantage,
+        impact: hasHomeRef ? 7 : 4,
+        insight,
+        probAdjustment: hasHomeRef ? 0.02 : 0
+    };
 }
 
 function fetchRefereeAssignment(gameId) {
@@ -1027,7 +1062,7 @@ export async function analyzeAllAdvancedFactors(game, odds, injuries, stats = {}
         analyzeLineMovement(odds, homeTeam, awayTeam),
         analyzePublicBetting(homeTeam, awayTeam),
         analyzeRestAndSchedule(homeTeam, awayTeam, game.date, scrapedData), // Pass scrapedData
-        analyzeReferees(game.id),
+        analyzeReferees(game.id, scrapedData.refs || []),
         analyzeClutchPerformance(homeTeam, awayTeam),
         analyzeQuarterSplits(homeTeam, awayTeam),
         analyzeMotivation(homeTeam, awayTeam, game), // Pass game context for records
