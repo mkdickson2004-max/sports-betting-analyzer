@@ -3,13 +3,43 @@ import { generateDeepAnalysis, MODEL_METHODOLOGY } from '../agent/deepAnalyzer';
 import './DeepAnalysisPanel.css';
 
 export default function DeepAnalysisPanel({ game, odds, injuries, news, analysisData, scrapedData, aiAnalysis }) {
-    const [analysis, setAnalysis] = useState(analysisData || null);
+    // Helper: Normalize Backend AI Schema to Frontend Schema
+    const normalizeAnalysis = (data) => {
+        if (!data) return null;
+
+        // If it's already in frontend format (has recommendation), return as is
+        if (data.recommendation) return data;
+
+        // If it's Backend AI format (from LLM)
+        if (data.prediction || data.narrative) {
+            const betSide = data.prediction?.winner === game.homeTeam?.name ? 'home' : 'away';
+            return {
+                modelInfo: { name: 'Genesis AI (Server)', description: 'GPT-4o Powered Analysis' },
+                recommendation: {
+                    action: data.confidenceRating > 75 ? 'STRONG BET' : 'LEAN',
+                    team: data.prediction?.winner || 'Unknown',
+                    odds: -110, // Placeholder if not parsed
+                    book: 'Best Available'
+                },
+                confidence: data.confidenceRating || 0,
+                homeEdge: data.modelProbability ? (betSide === 'home' ? (data.modelProbability - 0.5) * 100 : -(data.modelProbability - 0.5) * 100) : 0,
+                betSizing: { units: data.confidenceRating > 80 ? 2 : 1, description: data.confidenceRating > 80 ? '2 Units' : '1 Unit' },
+                summary: data.narrative || data.analysis || '', // Narrative text
+                factors: data.factors || data.enhancedFactors || {},
+                keyInsights: data.keyInsights || []
+            };
+        }
+
+        return data; // Fallback
+    };
+
+    const [analysis, setAnalysis] = useState(normalizeAnalysis(analysisData) || null);
     const [loading, setLoading] = useState(!analysisData);
     const [activeSection, setActiveSection] = useState('summary');
 
     useEffect(() => {
         if (analysisData) {
-            setAnalysis(analysisData);
+            setAnalysis(normalizeAnalysis(analysisData));
             setLoading(false);
             return;
         }
@@ -17,6 +47,8 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
         async function runAnalysis() {
             setLoading(true);
             try {
+                // Determine scraping needed?
+                // This is frontend-side simulation fallback
                 const result = await generateDeepAnalysis(game, odds, injuries, news, {}, scrapedData);
                 setAnalysis(result);
             } catch (error) {
