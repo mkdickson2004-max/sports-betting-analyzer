@@ -66,7 +66,7 @@ export async function runAgentAnalysis(game, scrapedData, odds, injuries, news) 
         // Run LLM tasks SEQUENTIALLY to respect rate limits
         // Gemini free tier = 15 RPM, so we space out calls
 
-        // 1. Deep matchup analysis (most important - always run)
+        // 1. Deep matchup analysis
         try {
             const llmAnalysis = await generateLLMAnalysis(
                 game,
@@ -78,16 +78,13 @@ export async function runAgentAnalysis(game, scrapedData, odds, injuries, news) 
                 result.analysis = llmAnalysis;
                 result.narrative = llmAnalysis.narrative || null;
                 result.confidence = llmAnalysis.confidenceRating || 0;
-                console.log(`[AI AGENT] ✓ Deep analysis generated (confidence: ${result.confidence}/10)`);
+                console.log(`[AI AGENT] ✓ Deep analysis generated (confidence: ${result.confidence}/100)`);
             }
         } catch (e) {
             console.error(`[AI AGENT] Analysis error:`, e.message);
         }
 
-        // Small delay to avoid rate limiting
-        await new Promise(r => setTimeout(r, 4500));
-
-        // 2. Situational edge detection
+        // 2. Situational edge detection (Concurrent w/ others if possible, but sequential is safer for logic)
         try {
             const situationResult = await analyzeSituation(
                 game,
@@ -102,10 +99,7 @@ export async function runAgentAnalysis(game, scrapedData, odds, injuries, news) 
             console.error(`[AI AGENT] Situation error:`, e.message);
         }
 
-        // Small delay
-        await new Promise(r => setTimeout(r, 4500));
-
-        // 3. News sentiment analysis (only if we have news)
+        // 3. News sentiment analysis
         if (news?.length > 0) {
             try {
                 const sentimentResult = await analyzeSentiment(news, homeTeam, awayTeam);
