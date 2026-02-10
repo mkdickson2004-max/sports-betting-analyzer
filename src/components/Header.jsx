@@ -44,7 +44,7 @@ export default function Header({ activeSport, setActiveSport, onRefresh, lastUpd
             <div className="header-content">
                 <div className="header-brand">
                     <div className="logo">
-                        <span className="logo-icon">📊</span>
+                        <img src="/logo.png" alt="Mucker Logo" className="logo-icon-img" />
                         <div className="logo-text">
                             <span className="logo-name">Mucker</span>
                             <span className="logo-tagline">AI SPORTS INTELLIGENCE</span>
