@@ -216,13 +216,17 @@ export async function generateDeepAnalysis(game, odds, injuries, news, stats = {
 
     // Get all 12 advanced factors with scraped data
     // Pass the scraped data if available, otherwise use stats
-    const gameStats = stats[game.id] || scrapedData?.stats || {};
+    // Get all 12 advanced factors with scraped data
+    // Pass the scraped data if available, otherwise use stats
+    // Handle both bulk stats (by ID) and direct game stats { home, away }
+    const gameStats = stats.home && stats.away ? stats : (stats[game.id] || scrapedData?.stats || {});
+
     const advancedFactors = await analyzeAllAdvancedFactors(
         game,
         odds,
         injuries,
         gameStats,
-        scrapedData,  // Pass scraped data to advanced factors
+        scrapedData,
         news || []
     );
 
@@ -247,8 +251,8 @@ export async function generateDeepAnalysis(game, odds, injuries, news, stats = {
     };
 
     // Monte Carlo Simulation (Run 1000 iterations based on team stats)
-    const simHome = scrapedData?.stats?.home?.derived || {};
-    const simAway = scrapedData?.stats?.away?.derived || {};
+    const simHome = scrapedData?.stats?.home?.derived || gameStats.home?.derived || {};
+    const simAway = scrapedData?.stats?.away?.derived || gameStats.away?.derived || {};
     // Simulation returns home win probability (0.0 - 1.0)
     const simWinProb = runMonteCarloSimulation(
         simHome.offensiveRating ? simHome : { offensiveRating: 114, defensiveRating: 114, pace: 99 },
@@ -259,12 +263,11 @@ export async function generateDeepAnalysis(game, odds, injuries, news, stats = {
     const factorProbability = calculateModelProbabilityAdvanced(allFactors);
 
     // BLENDED MODEL: 75% Factors (Qualitative + Quantitative) + 25% Pure Monte Carlo (Quantitative Simulation)
-    // This adds robustness against bias and relies on statistical variance
     const modelProbability = (factorProbability * 0.75) + (simWinProb * 0.25);
 
-    // Calculate edge vs market
-    const marketProb = marketFactor.homeImplied / 100;
-    const edge = ((modelProbability - marketProb) * 100);
+    // Calculate edge vs market (Handle missing odds safely)
+    const marketProb = marketFactor.homeImplied ? (marketFactor.homeImplied / 100) : 0.5;
+    const edge = marketFactor.homeImplied ? ((modelProbability - marketProb) * 100) : 0;
 
     // Generate recommendation
     const recommendation = generateRecommendation(edge, modelProbability, marketFactor, allFactors);
@@ -284,15 +287,15 @@ export async function generateDeepAnalysis(game, odds, injuries, news, stats = {
         // Model info
         modelInfo: MODEL_METHODOLOGY,
 
-        // Teams
-        homeTeam: game.homeTeam?.name,
-        awayTeam: game.awayTeam?.name,
+        // Teams (Use safe access)
+        homeTeam: game.homeTeam?.name || 'Home',
+        awayTeam: game.awayTeam?.name || 'Away',
 
         // Probabilities
         modelHomeWinProb: Math.round(modelProbability * 100),
         modelAwayWinProb: Math.round((1 - modelProbability) * 100),
-        marketHomeProb: marketFactor.homeImplied,
-        marketAwayProb: marketFactor.awayImplied,
+        marketHomeProb: marketFactor.homeImplied || 0,
+        marketAwayProb: marketFactor.awayImplied || 0,
 
         // Edge
         homeEdge: Math.round(edge * 10) / 10,

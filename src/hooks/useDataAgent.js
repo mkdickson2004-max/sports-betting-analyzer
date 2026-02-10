@@ -108,15 +108,22 @@ export function useDataAgent(initialSport = 'nba') {
             let modelHomeProb = 0.5;
 
             if (matchingGame) {
-                const homeRecord = matchingGame.homeTeam?.record?.split('-').map(Number) || [0, 0];
-                const awayRecord = matchingGame.awayTeam?.record?.split('-').map(Number) || [0, 0];
+                // PRIMARILY USE AI MODEL PROBABILITY IF AVAILABLE
+                if (matchingGame.aiAnalysis && (matchingGame.aiAnalysis.modelHomeWinProb || matchingGame.aiAnalysis.homeWinProb)) {
+                    const prob = matchingGame.aiAnalysis.modelHomeWinProb || matchingGame.aiAnalysis.homeWinProb;
+                    modelHomeProb = prob / 100;
+                } else {
+                    // Fallback to simple record-based estimation
+                    const homeRecord = matchingGame.homeTeam?.record?.split('-').map(Number) || [0, 0];
+                    const awayRecord = matchingGame.awayTeam?.record?.split('-').map(Number) || [0, 0];
 
-                const homeWinPct = homeRecord[0] / (homeRecord[0] + homeRecord[1] + 0.001);
-                const awayWinPct = awayRecord[0] / (awayRecord[0] + awayRecord[1] + 0.001);
+                    const homeWinPct = homeRecord[0] / (homeRecord[0] + homeRecord[1] + 0.001);
+                    const awayWinPct = awayRecord[0] / (awayRecord[0] + awayRecord[1] + 0.001);
 
-                // Combine with home advantage (~60% baseline for home)
-                modelHomeProb = (homeWinPct * 0.4) + (1 - awayWinPct) * 0.3 + 0.15;
-                modelHomeProb = Math.max(0.2, Math.min(0.8, modelHomeProb));
+                    // Combine with home advantage (~60% baseline for home)
+                    modelHomeProb = (homeWinPct * 0.4) + (1 - awayWinPct) * 0.3 + 0.15;
+                    modelHomeProb = Math.max(0.2, Math.min(0.8, modelHomeProb));
+                }
             }
 
             // Calculate implied probability from odds
