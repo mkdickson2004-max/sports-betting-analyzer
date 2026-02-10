@@ -6,6 +6,7 @@
  */
 import { runAgentAnalysis } from './aiAgent.js';
 import { analyzeAllAdvancedFactors } from './advancedFactors.js';
+import { fetchSocialSentiment } from './socialScraper.js';
 // Data source endpoints
 
 // Data source endpoints
@@ -323,13 +324,22 @@ export async function runDataAgent(oddsApiKey = null) {
             const homeStats = dataStore.teamStats.get(game.homeTeam?.abbr);
             const awayStats = dataStore.teamStats.get(game.awayTeam?.abbr);
 
+            // 2. Fetch Social Sentiment (Reddit Hype / Rumors)
+            let socialData = { hypeLevel: 'Low', posts: [] };
+            try {
+                // Must pass Sport, HomeTeam object, AwayTeam object
+                socialData = await fetchSocialSentiment('nba', game.homeTeam, game.awayTeam);
+            } catch (e) {
+                // Ignore social errors, proceed with analysis
+            }
+
             try {
                 statsAnalysis = await analyzeAllAdvancedFactors(
                     game,
                     game.odds || {},
                     injuries,
-                    { home: homeStats, away: awayStats }, // Correct format: { home, away }
-                    {},
+                    { home: homeStats, away: awayStats },
+                    { social: socialData }, // Pass social data to statistical model too?
                     news
                 );
             } catch (e) {
@@ -340,6 +350,7 @@ export async function runDataAgent(oddsApiKey = null) {
             const scrapedData = {
                 factors: statsAnalysis.factors, // Pass calculated factors to AI
                 modelProb: statsAnalysis.homeWinProb, // Pass statistical probability
+                social: socialData, // Pass Reddit/Social sentiment
                 schedule: {},
                 rosters: {
                     home: rosterData.homeRoster,

@@ -72,7 +72,8 @@ export async function runAgentAnalysis(game, scrapedData, odds, injuries, news) 
                 game,
                 scrapedData?.factors || [],
                 odds,
-                injuries
+                injuries,
+                scrapedData?.social || null // Pass Social Data
             );
             if (llmAnalysis) {
                 result.analysis = llmAnalysis;

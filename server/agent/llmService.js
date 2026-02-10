@@ -110,7 +110,7 @@ export async function analyzeBettingFactors(gameData, oddsData, newsData) {
 /**
  * Generate deep analysis for a game
  */
-export async function generateLLMAnalysis(game, factors, odds, injuries) {
+export async function generateLLMAnalysis(game, factors, odds, injuries, socialData = null) {
     const prompt = `
     Analyze this game deeply: ${game.awayTeam} @ ${game.homeTeam}
     Date: ${game.date}
@@ -118,10 +118,11 @@ export async function generateLLMAnalysis(game, factors, odds, injuries) {
     Odds: ${JSON.stringify(odds)}
     Factors: ${JSON.stringify(factors)}
     Injuries: ${JSON.stringify(injuries)}
+    Social Sentiment (Reddit/Twitter): ${JSON.stringify(socialData)}
 
     Output JSON logic:
     {
-      "narrative": "Detailed narrative about the matchup...",
+      "narrative": "Detailed narrative including social sentiment...",
       "confidenceRating": 85 (0-100),
       "keyInsights": ["Insight 1", "Insight 2"],
       "prediction": { "winner": "Team", "spreadCover": "Team", "total": "Over/Under" }
