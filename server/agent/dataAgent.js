@@ -303,17 +303,21 @@ export async function runDataAgent(oddsApiKey = null) {
     };
 
     try {
-        const [games, injuries, news] = await Promise.all([
+        const [nbaGames, nflGames, injuries, news] = await Promise.all([
             fetchESPNScoreboard('nba'),
+            fetchESPNScoreboard('nfl'),
             fetchInjuryReports('nba'),
-            fetchSportsNews('nba')
+            fetchSportsNews('nfl')
         ]);
+
+        const games = [...nbaGames, ...nflGames];
 
         results.games = games;
         results.injuries = injuries;
         results.news = news;
 
-        results.teamStats = await fetchTeamStats('nba');
+        await fetchTeamStats('nba');
+        await fetchTeamStats('nfl');
 
         // ---------------------------------------------------------
         // AI PHASE: Run Deep Analysis on Active Games
