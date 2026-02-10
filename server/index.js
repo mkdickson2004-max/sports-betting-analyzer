@@ -27,28 +27,6 @@ const __dirname = path.dirname(__filename);
 // Serve Static Frontend (Production)
 app.use(express.static(path.join(__dirname, '../dist')));
 
-// API Status Endpoint
-app.get('/api/status', (req, res) => {
-    res.json({
-        message: "Sports Betting Analyzer API is Running 🚀",
-        status: "active",
-        endpoints: {
-            data: "/api/data?sport=nba",
-            research: "/api/research?query=search_term",
-            health: "/health",
-        },
-        info: "Frontend should be served at root /"
-    });
-});
-
-// Handle SPA Routing (Send index.html for non-API routes)
-app.get('*', (req, res) => {
-    if (req.path.startsWith('/api')) {
-        return res.status(404).json({ error: 'API endpoint not found' });
-    }
-    res.sendFile(path.join(__dirname, '../dist/index.html'));
-});
-
 // Cache context
 let isProcessing = false;
 let lastUpdate = 0;
@@ -192,6 +170,28 @@ app.get('/health', (req, res) => {
         agentMode: isLLMConfigured() ? 'ai-powered' : 'rule-based',
         dataSource: 'data_agent_pipeline_v2'
     });
+});
+
+// API Status Endpoint
+app.get('/api/status', (req, res) => {
+    res.json({
+        message: "Sports Betting Analyzer API is Running 🚀",
+        status: "active",
+        endpoints: {
+            data: "/api/data?sport=nba",
+            research: "/api/research?query=search_term",
+            health: "/health",
+        },
+        info: "Frontend should be served at root /"
+    });
+});
+
+// Handle SPA Routing (Send index.html for non-API routes)
+app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    res.sendFile(path.join(__dirname, '../dist/index.html'));
 });
 
 app.listen(PORT, () => {
