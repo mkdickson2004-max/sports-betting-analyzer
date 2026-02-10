@@ -5,6 +5,8 @@
  * from multiple sources across the internet to provide accurate betting intelligence.
  */
 import { runAgentAnalysis } from './aiAgent.js';
+import { analyzeAllAdvancedFactors } from './advancedFactors.js';
+// Data source endpoints
 
 // Data source endpoints
 const DATA_SOURCES = {
@@ -314,8 +316,30 @@ export async function runDataAgent(oddsApiKey = null) {
         const analysisPromises = games.map(async (game) => {
             const rosterData = rosterMap[game.id];
 
+            // 1. Calculate Advanced Factors (Statistical Model)
+            let statsAnalysis = { factors: {}, homeWinProb: 0.5 };
+
+            // Get stats from dataStore
+            const homeStats = dataStore.teamStats.get(game.homeTeam?.abbr);
+            const awayStats = dataStore.teamStats.get(game.awayTeam?.abbr);
+
+            try {
+                statsAnalysis = await analyzeAllAdvancedFactors(
+                    game,
+                    game.odds || {},
+                    injuries,
+                    { home: homeStats, away: awayStats }, // Correct format: { home, away }
+                    {},
+                    news
+                );
+            } catch (e) {
+                console.error(`Error calculating advanced factors for game ${game.id}:`, e);
+            }
+
+            // 2. Construct AI Data Package
             const scrapedData = {
-                factors: {},
+                factors: statsAnalysis.factors, // Pass calculated factors to AI
+                modelProb: statsAnalysis.homeWinProb, // Pass statistical probability
                 schedule: {},
                 rosters: {
                     home: rosterData.homeRoster,
@@ -327,13 +351,25 @@ export async function runDataAgent(oddsApiKey = null) {
                 }
             };
 
-            return await runAgentAnalysis(
+            // 3. Run LLM Analysis (Refinement)
+            const llmResult = await runAgentAnalysis(
                 game,
                 scrapedData,
                 game.odds || {},
                 injuries,
                 news
             );
+
+            // Merge statistical findings if LLM succeeds
+            if (llmResult) {
+                llmResult.enhancedFactors = statsAnalysis.factors;
+                // If LLM doesn't provide probability, use statistical
+                if (!llmResult.modelProbability) {
+                    llmResult.modelProbability = statsAnalysis.homeWinProb;
+                }
+            }
+
+            return llmResult;
         });
 
         const evaluations = await Promise.all(analysisPromises);
