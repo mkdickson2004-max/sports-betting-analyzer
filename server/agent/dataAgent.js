@@ -91,7 +91,13 @@ export async function fetchESPNScoreboard(sport = 'nba') {
         const response = await fetch(`${endpoints[sport]}/scoreboard`);
         const data = await response.json();
 
-        const games = data.events?.map(event => ({
+        const validGames = data.events?.filter(event => {
+            // STRICT FILTER: Only show upcoming or live games
+            // Hide if completed or in 'post' state
+            return !event.status.type.completed && event.status.type.state !== 'post';
+        }) || [];
+
+        const games = validGames.map(event => ({
             id: event.id,
             name: event.name,
             shortName: event.shortName,
@@ -113,7 +119,7 @@ export async function fetchESPNScoreboard(sport = 'nba') {
                 score: event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'away')?.score,
                 record: event.competitions?.[0]?.competitors?.find(c => c.homeAway === 'away')?.records?.[0]?.summary
             }
-        })) || [];
+        }));
 
         games.forEach(game => {
             dataStore.games.set(game.id, game);
