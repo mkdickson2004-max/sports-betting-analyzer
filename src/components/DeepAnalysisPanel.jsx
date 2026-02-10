@@ -71,37 +71,37 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
 
     if (!analysis) return null;
 
-    const hasEdge = Math.abs(analysis.homeEdge) > 5;
-    const betSide = analysis.homeEdge > 0 ? 'home' : 'away';
+    const hasEdge = Math.abs(analysis?.homeEdge || 0) > 5;
+    const betSide = (analysis?.homeEdge || 0) > 0 ? 'home' : 'away';
 
     return (
         <div className="deep-analysis-panel">
             {/* Model Info Banner */}
             <div className="model-info-banner">
-                <span className="model-name">🤖 {analysis.modelInfo.name}</span>
-                <span className="model-desc">{analysis.modelInfo.description}</span>
+                <span className="model-name">🤖 {analysis?.modelInfo?.name || 'AI Model'}</span>
+                <span className="model-desc">{analysis?.modelInfo?.description || 'Advanced Analysis'}</span>
             </div>
 
             {/* Main Recommendation Header */}
-            <div className={`recommendation-header ${analysis.recommendation.action?.toLowerCase().replace(' ', '-')}`}>
+            <div className={`recommendation-header ${analysis?.recommendation?.action?.toLowerCase().replace(' ', '-') || 'neutral'}`}>
                 <div className="rec-left">
                     <div className="rec-badge">
-                        {analysis.recommendation.action === 'STRONG BET' && '🎯'}
-                        {analysis.recommendation.action === 'LEAN' && '👀'}
-                        {analysis.recommendation.action === 'PASS' && '⏸️'}
-                        <span>{analysis.recommendation.action}</span>
+                        {analysis?.recommendation?.action === 'STRONG BET' && '🎯'}
+                        {analysis?.recommendation?.action === 'LEAN' && '👀'}
+                        {analysis?.recommendation?.action === 'PASS' && '⏸️'}
+                        <span>{analysis?.recommendation?.action || 'ANALYZING'}</span>
                     </div>
 
-                    {analysis.recommendation.action !== 'PASS' && (
+                    {analysis?.recommendation?.action !== 'PASS' && (
                         <div className="rec-pick">
                             <span className="pick-label">AI PICK:</span>
                             <span className="pick-team">
-                                {betSide === 'home' ? analysis.homeTeam : analysis.awayTeam}
+                                {betSide === 'home' ? analysis?.homeTeam || game.homeTeam?.abbr : analysis?.awayTeam || game.awayTeam?.abbr}
                             </span>
                             <span className="pick-odds">
-                                {analysis.recommendation.odds > 0 ? '+' : ''}{analysis.recommendation.odds}
+                                {(analysis?.recommendation?.odds || 0) > 0 ? '+' : ''}{analysis?.recommendation?.odds || '-'}
                             </span>
-                            <span className="pick-book">@ {analysis.recommendation.book}</span>
+                            <span className="pick-book">@ {analysis?.recommendation?.book || 'Best Line'}</span>
                         </div>
                     )}
                 </div>
@@ -110,23 +110,23 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
                     <div className="confidence-display">
                         <span className="conf-label">Confidence</span>
                         <div className="conf-bar">
-                            <div className="conf-fill" style={{ width: `${analysis.confidence}%` }} />
+                            <div className="conf-fill" style={{ width: `${analysis?.confidence || 0}%` }} />
                         </div>
-                        <span className="conf-value">{analysis.confidence}%</span>
+                        <span className="conf-value">{analysis?.confidence || 0}%</span>
                     </div>
 
                     <div className="edge-display">
-                        <span className="edge-value">+{Math.abs(analysis.homeEdge > 0 ? analysis.homeEdge : analysis.awayEdge)}%</span>
+                        <span className="edge-value">+{Math.abs((analysis?.homeEdge || 0) > 0 ? analysis?.homeEdge : analysis?.homeEdge || 0).toFixed(1)}%</span>
                         <span className="edge-label">MODEL EDGE</span>
                     </div>
                 </div>
             </div>
 
             {/* Bet Sizing */}
-            {analysis.betSizing.units > 0 && (
+            {analysis?.betSizing?.units > 0 && (
                 <div className="bet-sizing-banner">
                     <span className="sizing-label">💰 Suggested Size:</span>
-                    <span className="sizing-value">{analysis.betSizing.description}</span>
+                    <span className="sizing-value">{analysis?.betSizing?.description || '1 Unit'}</span>
                 </div>
             )}
 
@@ -138,6 +138,7 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
                         className={activeSection === section ? 'active' : ''}
                         onClick={() => setActiveSection(section)}
                     >
+                        {/* Tab Names */}
                         {section === 'summary' && '📊 Summary'}
                         {section === 'ai-insights' && '🤖 AI Insights'}
                         {section === 'advanced' && '🎯 10 Factors'}
@@ -158,7 +159,7 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
                     </div>
 
                     {/* LLM Narrative */}
-                    {aiAnalysis.narrative && (
+                    {aiAnalysis?.narrative && (
                         <div className="ai-narrative">
                             <h4>📝 AI Analysis</h4>
                             <p className="narrative-text">{aiAnalysis.narrative}</p>
@@ -166,7 +167,7 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
                     )}
 
                     {/* Key Insight */}
-                    {aiAnalysis.analysis?.keyInsight && (
+                    {aiAnalysis?.analysis?.keyInsight && (
                         <div className="ai-key-insight">
                             <span className="insight-icon">💡</span>
                             <p>{aiAnalysis.analysis.keyInsight}</p>
@@ -174,7 +175,7 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
                     )}
 
                     {/* Sharp Angle */}
-                    {aiAnalysis.analysis?.sharpAngle && (
+                    {aiAnalysis?.analysis?.sharpAngle && (
                         <div className="ai-sharp-angle">
                             <h4>🎯 Sharp Angle</h4>
                             <p>{aiAnalysis.analysis.sharpAngle}</p>
@@ -182,7 +183,7 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
                     )}
 
                     {/* AI Recommended Bet */}
-                    {aiAnalysis.analysis?.recommendedBet && (
+                    {aiAnalysis?.analysis?.recommendedBet && (
                         <div className="ai-rec-bet">
                             <h4>💰 AI Recommended Bet</h4>
                             <div className="ai-bet-details">
@@ -194,7 +195,7 @@ export default function DeepAnalysisPanel({ game, odds, injuries, news, analysis
                     )}
 
                     {/* Sentiment Analysis */}
-                    {aiAnalysis.sentiment && (
+                    {aiAnalysis?.sentiment && (
                         <div className="ai-sentiment">
                             <h4>📰 News Sentiment</h4>
                             <div className="sentiment-scores">
