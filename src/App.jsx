@@ -6,7 +6,7 @@ import EloRankings from './components/EloRankings';
 import ParlayCreator from './components/ParlayCreator';
 import SuperBowlView from './components/SuperBowlView';
 import useDataAgent from './hooks/useDataAgent';
-import BacktestView from './components/BacktestView';
+
 import './App.css';
 
 function App() {
@@ -92,13 +92,7 @@ function App() {
               <span className="tab-icon">🎰</span>
               Parlay Builder
             </button>
-            <button
-              className={`view-tab ${activeView === 'backtest' ? 'active' : ''}`}
-              onClick={() => setActiveView('backtest')}
-            >
-              <span className="tab-icon">⏳</span>
-              Backtest Model
-            </button>
+
           </div>
 
           {/* Loading State */}
@@ -188,9 +182,7 @@ function App() {
           )}
 
           {/* Backtest View */}
-          {!data.isLoading && activeView === 'backtest' && (
-            <BacktestView />
-          )}
+
         </div>
       </main>
 
