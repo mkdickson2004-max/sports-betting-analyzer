@@ -38,7 +38,10 @@ export async function fetchSocialSentiment(sport, homeTeam, awayTeam) {
             const url = `https://www.reddit.com/r/${sub}/new.json?limit=25`;
             const response = await fetch(url, {
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'application/json, text/plain, */*',
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'DNT': '1'
                 }
             });
 
