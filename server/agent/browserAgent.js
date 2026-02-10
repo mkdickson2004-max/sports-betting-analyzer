@@ -8,8 +8,6 @@
  * To use: Ensure the scraper-service is running on port 3002 (or SCRAPER_URL).
  */
 
-import fetch from 'node-fetch';
-
 const SCRAPER_URL = process.env.SCRAPER_URL || 'http://localhost:3002'; // Default to local
 
 class BrowserAgentClient {
