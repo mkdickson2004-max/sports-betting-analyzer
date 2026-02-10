@@ -205,11 +205,13 @@ export const MODEL_METHODOLOGY = {
  * @param {Object} scrapedData - Pre-scraped comprehensive data (optional)
  */
 export async function generateDeepAnalysis(game, odds, injuries, news, stats = {}, scrapedData = null) {
-    // Get matchup data
+    // Get matchup data (Using Team Stats for positional analysis)
     const matchupData = await analyzeMatchups(
         game.homeTeam,
         game.awayTeam,
-        injuries
+        injuries,
+        scrapedData?.stats?.home?.offense ? scrapedData.stats.home : {},
+        scrapedData?.stats?.away?.offense ? scrapedData.stats.away : {}
     );
 
     // Get all 12 advanced factors with scraped data
@@ -373,12 +375,14 @@ function getTotalsRecommendation(factors) {
  */
 function calculateModelProbabilityAdvanced(allFactors) {
     // Base weights
+    // Base weights (Must sum to 1.0)
+    // We prioritize Matchups (Stylistic edge + Bench) and Injuries (Real-time impact) as they are the biggest movers.
     const baseWeights = {
-        teamStrength: 0.12,
-        matchups: 0.15,
-        injuries: 0.08,
-        form: 0.08,
-        situational: 0.07
+        teamStrength: 0.10, // Win% (minor factor)
+        matchups: 0.35,     // Matchups + Bench (major factor)
+        injuries: 0.25,     // Injuries + Star Impact (critical factor)
+        form: 0.15,
+        situational: 0.15   // Motivation/Schedule (swing factor)
     };
 
     // Start with base probability
