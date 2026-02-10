@@ -380,10 +380,13 @@ function calculateModelProbabilityAdvanced(allFactors) {
     const advancedAdjustment = allFactors.advanced.summary.totalProbAdjustment / 100;
 
     // Final probability
-    const probability = 0.50 + (baseProbability - 0.50) / 0.50 * 0.20 + advancedAdjustment;
+    // Final probability
+    // We multiply by 0.85 to allow for a wider range of probabilities (10-90%) instead of being compressed to 30-70%
+    // This allows the model to correctly identify strong favorites
+    const probability = 0.50 + (baseProbability - 0.50) * 0.85 + advancedAdjustment;
 
-    // Normalize to reasonable range
-    return Math.max(0.25, Math.min(0.75, probability));
+    // Normalize to reasonable range (5% to 95%)
+    return Math.max(0.05, Math.min(0.95, probability));
 }
 
 /**
@@ -740,8 +743,8 @@ function calculateModelProbability(factors) {
         (factors.situational.probContribution * weights.situational) +
         (0.50 * weights.market); // Market is used for comparison, not prediction
 
-    // Normalize to reasonable range (30-70%)
-    return Math.max(0.30, Math.min(0.70, probability));
+    // Normalize to reasonable range (10-90%)
+    return Math.max(0.10, Math.min(0.90, probability));
 }
 
 /**
