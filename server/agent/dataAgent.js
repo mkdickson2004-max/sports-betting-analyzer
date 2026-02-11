@@ -307,11 +307,11 @@ export async function runDataAgent(oddsApiKey = null) {
     };
 
     try {
-        const [nbaGames, nflGames, injuries, news, nbaOdds, nflOdds] = await Promise.all([
+        const [nbaGames, nflGames, nbaOdds, nflOdds] = await Promise.all([
             fetchESPNScoreboard('nba'),
             fetchESPNScoreboard('nfl'),
-            fetchInjuryReports('nba'),
-            fetchSportsNews('nfl'),
+            // fetchInjuryReports('nba'), // Disabled
+            // fetchSportsNews('nfl'),    // Disabled
             scrapeAllOdds('nba'),
             scrapeAllOdds('nfl')
         ]);
@@ -362,49 +362,23 @@ export async function runDataAgent(oddsApiKey = null) {
                 const homeId = game.homeTeam?.id;
                 const awayId = game.awayTeam?.id;
 
-                // A. Fetch Roster & Schedule (Parallel per game)
-                // Note: Social scraping is also parallelized here if needed, but we do it sequentially.
-                const [
-                    homeRoster, awayRoster,
-                    homeSchedule, awaySchedule
-                ] = await Promise.all([
-                    fetchRoster(homeId),
-                    fetchRoster(awayId),
-                    fetchSchedule(homeId),
-                    fetchSchedule(awayId)
-                ]);
+                // B. Calculate H2H (Simplified - Disabled detailed fetch)
+                // const h2hGames = homeSchedule.filter(g => g.opponent?.id == awayId);
+                const h2hData = { totalGames: 0 }; // Placeholder
 
-                // B. Calculate H2H (Head-to-Head)
-                // Use loose equality for ID matching
-                const h2hGames = homeSchedule.filter(g => g.opponent?.id == awayId);
-                const homeWins = h2hGames.filter(g => g.result === 'win').length;
-                const h2hData = {
-                    totalGames: h2hGames.length,
-                    homeWins: homeWins,
-                    awayWins: h2hGames.length - homeWins,
-                    lastGame: h2hGames[0] || null
-                };
-
-                // C. Fetch Social Sentiment
-                let socialData = { hypeLevel: 'Low', posts: [] };
-                try {
-                    // Use standard function (imported above). Assuming 'nba' for now, or infer from game.sport?
-                    // The function signature: fetchSocialSentiment(league, homeTeam, awayTeam)
-                    // The 'game' object has 'sport' property if fetched from unified fetcher? 
-                    // Let's assume 'nba' is safe default or use game.sport (if available).
-                    // Actually fetchESPNScoreboard adds sport? No.
-                    // But we can check leagues.
-                    const league = game.league || 'nba'; // Fallback
-                    socialData = await fetchSocialSentiment(league, game.homeTeam, game.awayTeam);
-                } catch (e) {
-                    // console.warn('Social fetch failed', e.message);
-                }
+                // C. Social Sentiment - DISABLED for speed
+                const socialData = { hypeLevel: 'Low', posts: [] };
 
                 // D. Run Statistical Model
                 const homeStats = dataStore.teamStats.get(game.homeTeam?.abbr);
                 const awayStats = dataStore.teamStats.get(game.awayTeam?.abbr);
 
                 let statsAnalysis = { factors: {}, homeWinProb: 0.5 };
+                // Simplified Stats Analysis
+                statsAnalysis = { terms: [], factors: [] }; // Reduced load
+
+                // D. Run Statistical Model - DISABLED for speed
+                /*
                 try {
                     statsAnalysis = await analyzeAllAdvancedFactors(
                         game,
@@ -423,6 +397,7 @@ export async function runDataAgent(oddsApiKey = null) {
                 } catch (e) {
                     console.error(`Stats model error ${game.id}:`, e.message);
                 }
+                */
 
                 // SMART CACHING: Reuse AI analysis if recent (< 6 hours)
                 let llmResult = null;
@@ -451,18 +426,15 @@ export async function runDataAgent(oddsApiKey = null) {
                     } catch (e) { console.error("MC Error", e); }
 
                     const scrapedData = {
-                        factors: statsAnalysis.factors,
-                        modelProb: statsAnalysis.homeWinProb,
+                        factors: statsAnalysis.factors || [],
+                        modelProb: 0.5,
                         monteCarlo: mcSim,
                         social: socialData,
-                        h2h: h2hData,
-                        schedule: { home: homeSchedule, away: awaySchedule },
-                        rosters: { home: homeRoster, away: awayRoster },
                         teamStats: { home: homeStats || {}, away: awayStats || {} }
                     };
 
                     llmResult = await runAgentAnalysis(
-                        game, scrapedData, game.odds || {}, injuries, news
+                        game, scrapedData, game.odds || {}, {}, []
                     );
 
                     // Add rate limit delay ONLY if we hit the API
