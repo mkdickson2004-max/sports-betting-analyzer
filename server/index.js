@@ -30,7 +30,7 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // Cache context
 let isProcessing = false;
 let lastUpdate = 0;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 mins
+const CACHE_DURATION = 1 * 60 * 1000; // 1 min for faster updates
 
 // ---------------------------------------------------------
 // MAIN DATA ENDPOINT (Powered by runDataAgent)

@@ -273,7 +273,7 @@ export function useDataAgent(initialSport = 'nba') {
 
     useEffect(() => {
         runAgent();
-        const interval = setInterval(runAgent, 5 * 60 * 1000);
+        const interval = setInterval(runAgent, 1 * 60 * 1000); // Poll every minute
         return () => clearInterval(interval);
     }, [runAgent]);
 
