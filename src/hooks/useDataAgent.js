@@ -216,7 +216,11 @@ export function useDataAgent(initialSport = 'nba') {
                 aiAnalysis: aiAnalysis[game.id] || game.aiAnalysis || null
             }));
 
-            const odds = serverData.odds ? Object.values(serverData.odds) : [];
+            const oddsRaw = serverData.odds || {};
+            const odds = [
+                ...(oddsRaw.nba?.data || []),
+                ...(oddsRaw.nfl?.data || [])
+            ];
             const injuries = serverData.injuries || {};
             const news = serverData.news || [];
             const teamStats = serverData.teamStats || {};
@@ -235,7 +239,7 @@ export function useDataAgent(initialSport = 'nba') {
             });
 
             // Calculate Value Bets
-            const valueBets = calculateValueBets(serverData.odds || {}, serverData.games || {}); // Pass raw objects as helper expects
+            const valueBets = calculateValueBets(odds, games); // Pass flattened odds array
 
             const alerts = news.filter(n => n.description && (
                 n.description.includes('injury') ||
