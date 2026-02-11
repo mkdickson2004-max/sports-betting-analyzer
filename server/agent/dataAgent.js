@@ -8,6 +8,7 @@ import { runAgentAnalysis } from './aiAgent.js';
 import { analyzeAllAdvancedFactors } from './advancedFactors.js';
 import { fetchSocialSentiment } from './socialScraper.js';
 import { runMonteCarloSimulation } from '../utils/monteCarlo.js';
+import { scrapeAllOdds } from './oddsScraper.js';
 // Data source endpoints
 
 // Data source endpoints
@@ -119,9 +120,9 @@ function extractTeamMentions(text) {
 /**
  * AGENT: Fetch live odds (Deprecated)
  */
-export async function fetchLiveOdds(sport = 'basketball_nba', apiKey = null) {
-    console.log(`[AGENT] Odds are now scraped from public sources (no API key needed)`);
-    return null;
+export async function fetchLiveOdds(sport = 'nba', apiKey = null) {
+    console.log(`[AGENT] Fetching live odds via scraper for ${sport}...`);
+    return await scrapeAllOdds(sport);
 }
 
 /**
@@ -152,6 +153,7 @@ export async function fetchESPNScoreboard(sport = 'nba') {
             shortName: event.shortName,
             date: event.date,
             status: event.status?.type?.description,
+            sport: sport, // Add sport tag for filtering
             venue: event.competitions?.[0]?.venue?.fullName,
             broadcast: event.competitions?.[0]?.broadcasts?.[0]?.names?.[0],
             officials: event.competitions?.[0]?.officials?.map(o => o.fullName),
@@ -305,18 +307,35 @@ export async function runDataAgent(oddsApiKey = null) {
     };
 
     try {
-        const [nbaGames, nflGames, injuries, news] = await Promise.all([
+        const [nbaGames, nflGames, injuries, news, nbaOdds, nflOdds] = await Promise.all([
             fetchESPNScoreboard('nba'),
             fetchESPNScoreboard('nfl'),
             fetchInjuryReports('nba'),
-            fetchSportsNews('nfl')
+            fetchSportsNews('nfl'),
+            scrapeAllOdds('nba'),
+            scrapeAllOdds('nfl')
         ]);
 
-        const games = [...nbaGames, ...nflGames];
+        // Merge Odds into Games
+        // Both sources use ESPN IDs, so we can map directly
+        const oddsMap = new Map();
+        if (nbaOdds?.data) nbaOdds.data.forEach(o => oddsMap.set(o.id, o));
+        if (nflOdds?.data) nflOdds.data.forEach(o => oddsMap.set(o.id, o));
+
+        const games = [...nbaGames, ...nflGames].map(game => {
+            const odds = oddsMap.get(game.id);
+            if (odds) {
+                game.odds = odds; // Attach structured odds object
+            } else {
+                game.odds = { bookmakers: [] }; // Empty fallack
+            }
+            return game;
+        });
 
         results.games = games;
         results.injuries = injuries;
         results.news = news;
+        results.odds = { nba: nbaOdds, nfl: nflOdds };
 
         await fetchTeamStats('nba');
         await fetchTeamStats('nfl');

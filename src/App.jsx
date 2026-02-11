@@ -115,31 +115,33 @@ function App() {
           {!data.isLoading && activeView === 'games' && (
             <section className="games-section">
               <div className="section-header">
-                <h2>🏀 Live NBA Games</h2>
+                <h2>🏀 Live {activeSport.toUpperCase()} Games</h2>
                 <span className="live-badge">
                   <span className="live-dot"></span>
                   LIVE DATA
                 </span>
               </div>
 
-              {data.games.length > 0 ? (
+              {data.games.filter(g => g.sport === activeSport).length > 0 ? (
                 <div className="games-list">
-                  {data.games.map(game => (
-                    <LiveGameCard
-                      key={game.id}
-                      game={game}
-                      odds={data.odds.find(o =>
-                        o.home_team === game.homeTeam?.name ||
-                        o.away_team === game.awayTeam?.name
-                      )}
-                      injuries={data.injuries}
-                      news={data.news}
-                    />
-                  ))}
+                  {data.games
+                    .filter(g => g.sport === activeSport)
+                    .map(game => (
+                      <LiveGameCard
+                        key={game.id}
+                        game={game}
+                        odds={data.odds.find(o =>
+                          o.home_team === game.homeTeam?.name ||
+                          o.away_team === game.awayTeam?.name
+                        )}
+                        injuries={data.injuries}
+                        news={data.news}
+                      />
+                    ))}
                 </div>
               ) : (
                 <div className="no-games">
-                  <p>No games scheduled for today</p>
+                  <p>No {activeSport.toUpperCase()} games scheduled for today</p>
                 </div>
               )}
             </section>
