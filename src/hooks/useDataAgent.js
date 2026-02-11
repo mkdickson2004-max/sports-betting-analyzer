@@ -99,10 +99,8 @@ export function useDataAgent(initialSport = 'nba') {
             });
 
             // Match with game data for records
-            // Backend games use 'name' or 'homeTeam.name'
-            const matchingGame = gamesArray.find(g =>
-                g.homeTeam?.name === game.homeTeam || g.awayTeam?.name === game.awayTeam
-            );
+            // Use ID for robust matching
+            const matchingGame = gamesArray.find(g => g.id === game.id);
 
             // Parse records to estimate probability
             let modelHomeProb = 0.5;
@@ -217,10 +215,8 @@ export function useDataAgent(initialSport = 'nba') {
             }));
 
             const oddsRaw = serverData.odds || {};
-            const odds = [
-                ...(oddsRaw.nba?.data || []),
-                ...(oddsRaw.nfl?.data || [])
-            ];
+            // Backend sends flat map { [gameId]: oddsObj }
+            const odds = Object.values(oddsRaw);
             const injuries = serverData.injuries || {};
             const news = serverData.news || [];
             const teamStats = serverData.teamStats || {};

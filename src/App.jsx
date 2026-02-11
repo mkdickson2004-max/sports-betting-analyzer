@@ -130,10 +130,7 @@ function App() {
                       <LiveGameCard
                         key={game.id}
                         game={game}
-                        odds={data.odds.find(o =>
-                          o.home_team === game.homeTeam?.name ||
-                          o.away_team === game.awayTeam?.name
-                        )}
+                        odds={data.odds.find(o => o.id === game.id)}
                         injuries={data.injuries}
                         news={data.news}
                       />

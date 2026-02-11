@@ -329,8 +329,15 @@ export async function runDataAgent(oddsApiKey = null) {
             } else {
                 game.odds = { bookmakers: [] }; // Empty fallack
             }
+            // Update dataStore with game having odds
+            dataStore.games.set(game.id, game);
             return game;
         });
+
+        // Update DataStore Odds
+        if (nbaOdds?.data) nbaOdds.data.forEach(o => dataStore.odds.set(o.id, o));
+        if (nflOdds?.data) nflOdds.data.forEach(o => dataStore.odds.set(o.id, o));
+        dataStore.lastUpdated.odds = new Date().toISOString();
 
         results.games = games;
         results.injuries = injuries;
